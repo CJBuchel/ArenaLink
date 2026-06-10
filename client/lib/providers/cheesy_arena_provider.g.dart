@@ -41,7 +41,7 @@ final class CheesyArenaProvider
   }
 }
 
-String _$cheesyArenaHash() => r'c6927bce6a4a35189651126afe3d63233dcd3829';
+String _$cheesyArenaHash() => r'8f4368bbd069c6f3903ce937e33dd879ae10785d';
 
 abstract class _$CheesyArena extends $Notifier<CheesyArenaState> {
   CheesyArenaState build();

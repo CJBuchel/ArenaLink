@@ -42,22 +42,25 @@ class CheesyArena extends _$CheesyArena {
     if (decoded is! Map<String, dynamic>) return;
     try {
       final msg = ArenaMessage.fromJson(decoded);
+      final data = msg.data;
 
       switch (msg.type) {
         case 'arenaStatus':
-          _handleArenaStatus(ArenaStatus.fromJson(msg.data));
+          state = state.copyWith(arenaStatus: ArenaStatus.fromJson(data));
+        case 'eventStatus':
+          if (data is Map<String, dynamic>) {
+            state = state.copyWith(eventStatus: EventStatus.fromJson(data));
+          }
+        case 'matchTime':
+          if (data is Map<String, dynamic>) {
+            state = state.copyWith(matchTime: MatchTimeMessage.fromJson(data));
+          }
         default:
           break;
       }
     } catch (e) {
-      print("Error: $e");
-      print("[Error occured | DECODED] $decoded");
-      print("[Error occured | RAW] $raw");
+      print('[ArenaProvider] parse error: $e\n$decoded');
     }
-  }
-
-  void _handleArenaStatus(ArenaStatus arenaStatus) {
-    state = state.copyWith(arenaStatus: arenaStatus);
   }
 
   void _onStatus(WebSocketStatus s) {
@@ -72,19 +75,27 @@ class CheesyArena extends _$CheesyArena {
 
 class CheesyArenaState {
   final ArenaStatus? arenaStatus;
+  final EventStatus? eventStatus;
+  final MatchTimeMessage? matchTime;
   final WebSocketStatus wsStatus;
 
   const CheesyArenaState({
     this.arenaStatus,
+    this.eventStatus,
+    this.matchTime,
     this.wsStatus = WebSocketStatus.disconnected,
   });
 
   CheesyArenaState copyWith({
     ArenaStatus? arenaStatus,
+    EventStatus? eventStatus,
+    MatchTimeMessage? matchTime,
     WebSocketStatus? wsStatus,
   }) {
     return CheesyArenaState(
       arenaStatus: arenaStatus ?? this.arenaStatus,
+      eventStatus: eventStatus ?? this.eventStatus,
+      matchTime: matchTime ?? this.matchTime,
       wsStatus: wsStatus ?? this.wsStatus,
     );
   }

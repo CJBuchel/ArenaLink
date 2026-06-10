@@ -45,7 +45,7 @@ class WebSocketHelper {
 
     try {
       _channel = WebSocketChannel.connect(Uri.parse(url));
-      await _channel!.ready;
+      await _channel!.ready.timeout(const Duration(seconds: 5));
       _reconnectAttempts = 0;
       _setStatus(WebSocketStatus.connected);
 
