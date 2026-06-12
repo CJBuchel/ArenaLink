@@ -115,10 +115,13 @@ abstract class CheesyMatchTimeMessage with _$CheesyMatchTimeMessage {
 @freezed
 abstract class CheesyMatchTiming with _$CheesyMatchTiming {
   const factory CheesyMatchTiming({
-    @JsonKey(name: 'WarmupDurationSec') @Default(0) int warmupDurationSec,
     @JsonKey(name: 'AutoDurationSec') @Default(15) int autoDurationSec,
     @JsonKey(name: 'PauseDurationSec') @Default(3) int pauseDurationSec,
-    @JsonKey(name: 'TeleopDurationSec') @Default(135) int teleopDurationSec,
+    // Cheesy Arena does not send a flat TeleopDurationSec — teleop is split into
+    // three sub-periods. Sum them to get the total teleop window.
+    @JsonKey(name: 'TransitionShiftDurationSec') @Default(10) int transitionShiftDurationSec,
+    @JsonKey(name: 'ShiftDurationSec') @Default(25) int shiftDurationSec,
+    @JsonKey(name: 'EndgameDurationSec') @Default(30) int endgameDurationSec,
     @JsonKey(name: 'WarningRemainingDurationSec') @Default(20) int warningRemainingDurationSec,
     @JsonKey(name: 'TimeoutDurationSec') @Default(0) int timeoutDurationSec,
   }) = _CheesyMatchTiming;

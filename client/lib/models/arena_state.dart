@@ -26,6 +26,13 @@ abstract class MatchStateConst {
   static const int postTimeout = 7;
 }
 
+abstract class MatchTypeConst {
+  static const int test = 0;
+  static const int practice = 1;
+  static const int qualification = 2;
+  static const int playoff = 3;
+}
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // BACKEND CONNECTION STATUS
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -216,18 +223,14 @@ class ScoringPosition {
 class FieldMonitorState {
   // ── Match metadata ─────────────────────────────────────────────────────
   final int matchId;
-  final String matchName; // e.g. "Qualification 12", "Practice 1"
+  final String matchName; // short name, e.g. "Q12", "P1", "SF1-1"
+  final int matchType;    // see MatchTypeConst
   final DateTime? scheduledStart;
 
   // ── Match phase & timing ───────────────────────────────────────────────
   final int matchState; // see MatchStateConst
   final bool canStartMatch;
-  final int matchTimeSec; // elapsed seconds within the current phase
-
-  // Phase durations (seconds)
-  final int autoDurationSec;
-  final int pauseDurationSec;
-  final int teleopDurationSec;
+  final int matchTimeSec; // elapsed seconds since match start
 
   // ── Alliance stations ──────────────────────────────────────────────────
   // Keys: R1, R2, R3, B1, B2, B3
@@ -253,13 +256,11 @@ class FieldMonitorState {
   const FieldMonitorState({
     this.matchId = 0,
     this.matchName = '',
+    this.matchType = MatchTypeConst.practice,
     this.scheduledStart,
     this.matchState = MatchStateConst.preMatch,
     this.canStartMatch = false,
     this.matchTimeSec = 0,
-    this.autoDurationSec = 15,
-    this.pauseDurationSec = 3,
-    this.teleopDurationSec = 135,
     this.stations = const {},
     this.hardware = const HardwareState(),
     this.redScore,
@@ -272,13 +273,11 @@ class FieldMonitorState {
   FieldMonitorState copyWith({
     int? matchId,
     String? matchName,
+    int? matchType,
     Object? scheduledStart = _sentinel,
     int? matchState,
     bool? canStartMatch,
     int? matchTimeSec,
-    int? autoDurationSec,
-    int? pauseDurationSec,
-    int? teleopDurationSec,
     Map<String, StationStatus>? stations,
     HardwareState? hardware,
     Object? redScore = _sentinel,
@@ -290,15 +289,13 @@ class FieldMonitorState {
     return FieldMonitorState(
       matchId: matchId ?? this.matchId,
       matchName: matchName ?? this.matchName,
+      matchType: matchType ?? this.matchType,
       scheduledStart: scheduledStart == _sentinel
           ? this.scheduledStart
           : scheduledStart as DateTime?,
       matchState: matchState ?? this.matchState,
       canStartMatch: canStartMatch ?? this.canStartMatch,
       matchTimeSec: matchTimeSec ?? this.matchTimeSec,
-      autoDurationSec: autoDurationSec ?? this.autoDurationSec,
-      pauseDurationSec: pauseDurationSec ?? this.pauseDurationSec,
-      teleopDurationSec: teleopDurationSec ?? this.teleopDurationSec,
       stations: stations ?? this.stations,
       hardware: hardware ?? this.hardware,
       redScore: redScore == _sentinel ? this.redScore : redScore as int?,

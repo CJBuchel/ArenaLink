@@ -78,10 +78,12 @@ Map<String, dynamic> _$CheesyMatchTimeMessageToJson(
 
 _CheesyMatchTiming _$CheesyMatchTimingFromJson(Map<String, dynamic> json) =>
     _CheesyMatchTiming(
-      warmupDurationSec: (json['WarmupDurationSec'] as num?)?.toInt() ?? 0,
       autoDurationSec: (json['AutoDurationSec'] as num?)?.toInt() ?? 15,
       pauseDurationSec: (json['PauseDurationSec'] as num?)?.toInt() ?? 3,
-      teleopDurationSec: (json['TeleopDurationSec'] as num?)?.toInt() ?? 135,
+      transitionShiftDurationSec:
+          (json['TransitionShiftDurationSec'] as num?)?.toInt() ?? 10,
+      shiftDurationSec: (json['ShiftDurationSec'] as num?)?.toInt() ?? 25,
+      endgameDurationSec: (json['EndgameDurationSec'] as num?)?.toInt() ?? 30,
       warningRemainingDurationSec:
           (json['WarningRemainingDurationSec'] as num?)?.toInt() ?? 20,
       timeoutDurationSec: (json['TimeoutDurationSec'] as num?)?.toInt() ?? 0,
@@ -89,10 +91,11 @@ _CheesyMatchTiming _$CheesyMatchTimingFromJson(Map<String, dynamic> json) =>
 
 Map<String, dynamic> _$CheesyMatchTimingToJson(_CheesyMatchTiming instance) =>
     <String, dynamic>{
-      'WarmupDurationSec': instance.warmupDurationSec,
       'AutoDurationSec': instance.autoDurationSec,
       'PauseDurationSec': instance.pauseDurationSec,
-      'TeleopDurationSec': instance.teleopDurationSec,
+      'TransitionShiftDurationSec': instance.transitionShiftDurationSec,
+      'ShiftDurationSec': instance.shiftDurationSec,
+      'EndgameDurationSec': instance.endgameDurationSec,
       'WarningRemainingDurationSec': instance.warningRemainingDurationSec,
       'TimeoutDurationSec': instance.timeoutDurationSec,
     };

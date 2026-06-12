@@ -369,10 +369,6 @@ class _FieldStateFooter extends StatelessWidget {
       );
     }
 
-    if (ms == MatchStateConst.postMatch || ms == MatchStateConst.postTimeout) {
-      return _solidFooter(bg: bgSafe, icon: Icons.shield_rounded, text: 'SAFE');
-    }
-
     return _solidFooter(
       bg: surfaceIdle,
       icon: Icons.hourglass_empty_rounded,

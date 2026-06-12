@@ -102,7 +102,7 @@ class CheesyArenaBackend implements ArenaBackend {
         case 'matchTime':
           _mergeMatchTime(CheesyMatchTimeMessage.fromJson(data));
         case 'matchTiming':
-          _mergeMatchTiming(CheesyMatchTiming.fromJson(data));
+          break; // timing sub-fields not used
         case 'eventStatus':
           _mergeEventStatus(CheesyEventStatus.fromJson(data));
         case 'realtimeScore':
@@ -202,6 +202,7 @@ class CheesyArenaBackend implements ArenaBackend {
     final field = current.copyWith(
       matchId: s.match.id,
       matchName: s.match.shortName,
+      matchType: s.match.type,
       scheduledStart: s.match.scheduledStartTime,
       stations: updated,
     );
@@ -213,16 +214,6 @@ class CheesyArenaBackend implements ArenaBackend {
     final field = current.copyWith(
       matchState: s.matchState,
       matchTimeSec: s.matchTimeSec,
-    );
-    _update(_arena.copyWith(field: field));
-  }
-
-  void _mergeMatchTiming(CheesyMatchTiming s) {
-    final current = _arena.field ?? const FieldMonitorState();
-    final field = current.copyWith(
-      autoDurationSec: s.autoDurationSec,
-      pauseDurationSec: s.pauseDurationSec,
-      teleopDurationSec: s.teleopDurationSec,
     );
     _update(_arena.copyWith(field: field));
   }

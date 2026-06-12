@@ -1120,7 +1120,7 @@ as int,
 /// @nodoc
 mixin _$CheesyMatchTiming {
 
-@JsonKey(name: 'WarmupDurationSec') int get warmupDurationSec;@JsonKey(name: 'AutoDurationSec') int get autoDurationSec;@JsonKey(name: 'PauseDurationSec') int get pauseDurationSec;@JsonKey(name: 'TeleopDurationSec') int get teleopDurationSec;@JsonKey(name: 'WarningRemainingDurationSec') int get warningRemainingDurationSec;@JsonKey(name: 'TimeoutDurationSec') int get timeoutDurationSec;
+@JsonKey(name: 'AutoDurationSec') int get autoDurationSec;@JsonKey(name: 'PauseDurationSec') int get pauseDurationSec;@JsonKey(name: 'TransitionShiftDurationSec') int get transitionShiftDurationSec;@JsonKey(name: 'ShiftDurationSec') int get shiftDurationSec;@JsonKey(name: 'EndgameDurationSec') int get endgameDurationSec;@JsonKey(name: 'WarningRemainingDurationSec') int get warningRemainingDurationSec;@JsonKey(name: 'TimeoutDurationSec') int get timeoutDurationSec;
 /// Create a copy of CheesyMatchTiming
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1133,16 +1133,16 @@ $CheesyMatchTimingCopyWith<CheesyMatchTiming> get copyWith => _$CheesyMatchTimin
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is CheesyMatchTiming&&(identical(other.warmupDurationSec, warmupDurationSec) || other.warmupDurationSec == warmupDurationSec)&&(identical(other.autoDurationSec, autoDurationSec) || other.autoDurationSec == autoDurationSec)&&(identical(other.pauseDurationSec, pauseDurationSec) || other.pauseDurationSec == pauseDurationSec)&&(identical(other.teleopDurationSec, teleopDurationSec) || other.teleopDurationSec == teleopDurationSec)&&(identical(other.warningRemainingDurationSec, warningRemainingDurationSec) || other.warningRemainingDurationSec == warningRemainingDurationSec)&&(identical(other.timeoutDurationSec, timeoutDurationSec) || other.timeoutDurationSec == timeoutDurationSec));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CheesyMatchTiming&&(identical(other.autoDurationSec, autoDurationSec) || other.autoDurationSec == autoDurationSec)&&(identical(other.pauseDurationSec, pauseDurationSec) || other.pauseDurationSec == pauseDurationSec)&&(identical(other.transitionShiftDurationSec, transitionShiftDurationSec) || other.transitionShiftDurationSec == transitionShiftDurationSec)&&(identical(other.shiftDurationSec, shiftDurationSec) || other.shiftDurationSec == shiftDurationSec)&&(identical(other.endgameDurationSec, endgameDurationSec) || other.endgameDurationSec == endgameDurationSec)&&(identical(other.warningRemainingDurationSec, warningRemainingDurationSec) || other.warningRemainingDurationSec == warningRemainingDurationSec)&&(identical(other.timeoutDurationSec, timeoutDurationSec) || other.timeoutDurationSec == timeoutDurationSec));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,warmupDurationSec,autoDurationSec,pauseDurationSec,teleopDurationSec,warningRemainingDurationSec,timeoutDurationSec);
+int get hashCode => Object.hash(runtimeType,autoDurationSec,pauseDurationSec,transitionShiftDurationSec,shiftDurationSec,endgameDurationSec,warningRemainingDurationSec,timeoutDurationSec);
 
 @override
 String toString() {
-  return 'CheesyMatchTiming(warmupDurationSec: $warmupDurationSec, autoDurationSec: $autoDurationSec, pauseDurationSec: $pauseDurationSec, teleopDurationSec: $teleopDurationSec, warningRemainingDurationSec: $warningRemainingDurationSec, timeoutDurationSec: $timeoutDurationSec)';
+  return 'CheesyMatchTiming(autoDurationSec: $autoDurationSec, pauseDurationSec: $pauseDurationSec, transitionShiftDurationSec: $transitionShiftDurationSec, shiftDurationSec: $shiftDurationSec, endgameDurationSec: $endgameDurationSec, warningRemainingDurationSec: $warningRemainingDurationSec, timeoutDurationSec: $timeoutDurationSec)';
 }
 
 
@@ -1153,7 +1153,7 @@ abstract mixin class $CheesyMatchTimingCopyWith<$Res>  {
   factory $CheesyMatchTimingCopyWith(CheesyMatchTiming value, $Res Function(CheesyMatchTiming) _then) = _$CheesyMatchTimingCopyWithImpl;
 @useResult
 $Res call({
-@JsonKey(name: 'WarmupDurationSec') int warmupDurationSec,@JsonKey(name: 'AutoDurationSec') int autoDurationSec,@JsonKey(name: 'PauseDurationSec') int pauseDurationSec,@JsonKey(name: 'TeleopDurationSec') int teleopDurationSec,@JsonKey(name: 'WarningRemainingDurationSec') int warningRemainingDurationSec,@JsonKey(name: 'TimeoutDurationSec') int timeoutDurationSec
+@JsonKey(name: 'AutoDurationSec') int autoDurationSec,@JsonKey(name: 'PauseDurationSec') int pauseDurationSec,@JsonKey(name: 'TransitionShiftDurationSec') int transitionShiftDurationSec,@JsonKey(name: 'ShiftDurationSec') int shiftDurationSec,@JsonKey(name: 'EndgameDurationSec') int endgameDurationSec,@JsonKey(name: 'WarningRemainingDurationSec') int warningRemainingDurationSec,@JsonKey(name: 'TimeoutDurationSec') int timeoutDurationSec
 });
 
 
@@ -1170,12 +1170,13 @@ class _$CheesyMatchTimingCopyWithImpl<$Res>
 
 /// Create a copy of CheesyMatchTiming
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? warmupDurationSec = null,Object? autoDurationSec = null,Object? pauseDurationSec = null,Object? teleopDurationSec = null,Object? warningRemainingDurationSec = null,Object? timeoutDurationSec = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? autoDurationSec = null,Object? pauseDurationSec = null,Object? transitionShiftDurationSec = null,Object? shiftDurationSec = null,Object? endgameDurationSec = null,Object? warningRemainingDurationSec = null,Object? timeoutDurationSec = null,}) {
   return _then(_self.copyWith(
-warmupDurationSec: null == warmupDurationSec ? _self.warmupDurationSec : warmupDurationSec // ignore: cast_nullable_to_non_nullable
-as int,autoDurationSec: null == autoDurationSec ? _self.autoDurationSec : autoDurationSec // ignore: cast_nullable_to_non_nullable
+autoDurationSec: null == autoDurationSec ? _self.autoDurationSec : autoDurationSec // ignore: cast_nullable_to_non_nullable
 as int,pauseDurationSec: null == pauseDurationSec ? _self.pauseDurationSec : pauseDurationSec // ignore: cast_nullable_to_non_nullable
-as int,teleopDurationSec: null == teleopDurationSec ? _self.teleopDurationSec : teleopDurationSec // ignore: cast_nullable_to_non_nullable
+as int,transitionShiftDurationSec: null == transitionShiftDurationSec ? _self.transitionShiftDurationSec : transitionShiftDurationSec // ignore: cast_nullable_to_non_nullable
+as int,shiftDurationSec: null == shiftDurationSec ? _self.shiftDurationSec : shiftDurationSec // ignore: cast_nullable_to_non_nullable
+as int,endgameDurationSec: null == endgameDurationSec ? _self.endgameDurationSec : endgameDurationSec // ignore: cast_nullable_to_non_nullable
 as int,warningRemainingDurationSec: null == warningRemainingDurationSec ? _self.warningRemainingDurationSec : warningRemainingDurationSec // ignore: cast_nullable_to_non_nullable
 as int,timeoutDurationSec: null == timeoutDurationSec ? _self.timeoutDurationSec : timeoutDurationSec // ignore: cast_nullable_to_non_nullable
 as int,
@@ -1263,10 +1264,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@JsonKey(name: 'WarmupDurationSec')  int warmupDurationSec, @JsonKey(name: 'AutoDurationSec')  int autoDurationSec, @JsonKey(name: 'PauseDurationSec')  int pauseDurationSec, @JsonKey(name: 'TeleopDurationSec')  int teleopDurationSec, @JsonKey(name: 'WarningRemainingDurationSec')  int warningRemainingDurationSec, @JsonKey(name: 'TimeoutDurationSec')  int timeoutDurationSec)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@JsonKey(name: 'AutoDurationSec')  int autoDurationSec, @JsonKey(name: 'PauseDurationSec')  int pauseDurationSec, @JsonKey(name: 'TransitionShiftDurationSec')  int transitionShiftDurationSec, @JsonKey(name: 'ShiftDurationSec')  int shiftDurationSec, @JsonKey(name: 'EndgameDurationSec')  int endgameDurationSec, @JsonKey(name: 'WarningRemainingDurationSec')  int warningRemainingDurationSec, @JsonKey(name: 'TimeoutDurationSec')  int timeoutDurationSec)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _CheesyMatchTiming() when $default != null:
-return $default(_that.warmupDurationSec,_that.autoDurationSec,_that.pauseDurationSec,_that.teleopDurationSec,_that.warningRemainingDurationSec,_that.timeoutDurationSec);case _:
+return $default(_that.autoDurationSec,_that.pauseDurationSec,_that.transitionShiftDurationSec,_that.shiftDurationSec,_that.endgameDurationSec,_that.warningRemainingDurationSec,_that.timeoutDurationSec);case _:
   return orElse();
 
 }
@@ -1284,10 +1285,10 @@ return $default(_that.warmupDurationSec,_that.autoDurationSec,_that.pauseDuratio
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@JsonKey(name: 'WarmupDurationSec')  int warmupDurationSec, @JsonKey(name: 'AutoDurationSec')  int autoDurationSec, @JsonKey(name: 'PauseDurationSec')  int pauseDurationSec, @JsonKey(name: 'TeleopDurationSec')  int teleopDurationSec, @JsonKey(name: 'WarningRemainingDurationSec')  int warningRemainingDurationSec, @JsonKey(name: 'TimeoutDurationSec')  int timeoutDurationSec)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@JsonKey(name: 'AutoDurationSec')  int autoDurationSec, @JsonKey(name: 'PauseDurationSec')  int pauseDurationSec, @JsonKey(name: 'TransitionShiftDurationSec')  int transitionShiftDurationSec, @JsonKey(name: 'ShiftDurationSec')  int shiftDurationSec, @JsonKey(name: 'EndgameDurationSec')  int endgameDurationSec, @JsonKey(name: 'WarningRemainingDurationSec')  int warningRemainingDurationSec, @JsonKey(name: 'TimeoutDurationSec')  int timeoutDurationSec)  $default,) {final _that = this;
 switch (_that) {
 case _CheesyMatchTiming():
-return $default(_that.warmupDurationSec,_that.autoDurationSec,_that.pauseDurationSec,_that.teleopDurationSec,_that.warningRemainingDurationSec,_that.timeoutDurationSec);case _:
+return $default(_that.autoDurationSec,_that.pauseDurationSec,_that.transitionShiftDurationSec,_that.shiftDurationSec,_that.endgameDurationSec,_that.warningRemainingDurationSec,_that.timeoutDurationSec);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -1304,10 +1305,10 @@ return $default(_that.warmupDurationSec,_that.autoDurationSec,_that.pauseDuratio
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@JsonKey(name: 'WarmupDurationSec')  int warmupDurationSec, @JsonKey(name: 'AutoDurationSec')  int autoDurationSec, @JsonKey(name: 'PauseDurationSec')  int pauseDurationSec, @JsonKey(name: 'TeleopDurationSec')  int teleopDurationSec, @JsonKey(name: 'WarningRemainingDurationSec')  int warningRemainingDurationSec, @JsonKey(name: 'TimeoutDurationSec')  int timeoutDurationSec)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@JsonKey(name: 'AutoDurationSec')  int autoDurationSec, @JsonKey(name: 'PauseDurationSec')  int pauseDurationSec, @JsonKey(name: 'TransitionShiftDurationSec')  int transitionShiftDurationSec, @JsonKey(name: 'ShiftDurationSec')  int shiftDurationSec, @JsonKey(name: 'EndgameDurationSec')  int endgameDurationSec, @JsonKey(name: 'WarningRemainingDurationSec')  int warningRemainingDurationSec, @JsonKey(name: 'TimeoutDurationSec')  int timeoutDurationSec)?  $default,) {final _that = this;
 switch (_that) {
 case _CheesyMatchTiming() when $default != null:
-return $default(_that.warmupDurationSec,_that.autoDurationSec,_that.pauseDurationSec,_that.teleopDurationSec,_that.warningRemainingDurationSec,_that.timeoutDurationSec);case _:
+return $default(_that.autoDurationSec,_that.pauseDurationSec,_that.transitionShiftDurationSec,_that.shiftDurationSec,_that.endgameDurationSec,_that.warningRemainingDurationSec,_that.timeoutDurationSec);case _:
   return null;
 
 }
@@ -1319,13 +1320,14 @@ return $default(_that.warmupDurationSec,_that.autoDurationSec,_that.pauseDuratio
 @JsonSerializable()
 
 class _CheesyMatchTiming implements CheesyMatchTiming {
-  const _CheesyMatchTiming({@JsonKey(name: 'WarmupDurationSec') this.warmupDurationSec = 0, @JsonKey(name: 'AutoDurationSec') this.autoDurationSec = 15, @JsonKey(name: 'PauseDurationSec') this.pauseDurationSec = 3, @JsonKey(name: 'TeleopDurationSec') this.teleopDurationSec = 135, @JsonKey(name: 'WarningRemainingDurationSec') this.warningRemainingDurationSec = 20, @JsonKey(name: 'TimeoutDurationSec') this.timeoutDurationSec = 0});
+  const _CheesyMatchTiming({@JsonKey(name: 'AutoDurationSec') this.autoDurationSec = 15, @JsonKey(name: 'PauseDurationSec') this.pauseDurationSec = 3, @JsonKey(name: 'TransitionShiftDurationSec') this.transitionShiftDurationSec = 10, @JsonKey(name: 'ShiftDurationSec') this.shiftDurationSec = 25, @JsonKey(name: 'EndgameDurationSec') this.endgameDurationSec = 30, @JsonKey(name: 'WarningRemainingDurationSec') this.warningRemainingDurationSec = 20, @JsonKey(name: 'TimeoutDurationSec') this.timeoutDurationSec = 0});
   factory _CheesyMatchTiming.fromJson(Map<String, dynamic> json) => _$CheesyMatchTimingFromJson(json);
 
-@override@JsonKey(name: 'WarmupDurationSec') final  int warmupDurationSec;
 @override@JsonKey(name: 'AutoDurationSec') final  int autoDurationSec;
 @override@JsonKey(name: 'PauseDurationSec') final  int pauseDurationSec;
-@override@JsonKey(name: 'TeleopDurationSec') final  int teleopDurationSec;
+@override@JsonKey(name: 'TransitionShiftDurationSec') final  int transitionShiftDurationSec;
+@override@JsonKey(name: 'ShiftDurationSec') final  int shiftDurationSec;
+@override@JsonKey(name: 'EndgameDurationSec') final  int endgameDurationSec;
 @override@JsonKey(name: 'WarningRemainingDurationSec') final  int warningRemainingDurationSec;
 @override@JsonKey(name: 'TimeoutDurationSec') final  int timeoutDurationSec;
 
@@ -1342,16 +1344,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CheesyMatchTiming&&(identical(other.warmupDurationSec, warmupDurationSec) || other.warmupDurationSec == warmupDurationSec)&&(identical(other.autoDurationSec, autoDurationSec) || other.autoDurationSec == autoDurationSec)&&(identical(other.pauseDurationSec, pauseDurationSec) || other.pauseDurationSec == pauseDurationSec)&&(identical(other.teleopDurationSec, teleopDurationSec) || other.teleopDurationSec == teleopDurationSec)&&(identical(other.warningRemainingDurationSec, warningRemainingDurationSec) || other.warningRemainingDurationSec == warningRemainingDurationSec)&&(identical(other.timeoutDurationSec, timeoutDurationSec) || other.timeoutDurationSec == timeoutDurationSec));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CheesyMatchTiming&&(identical(other.autoDurationSec, autoDurationSec) || other.autoDurationSec == autoDurationSec)&&(identical(other.pauseDurationSec, pauseDurationSec) || other.pauseDurationSec == pauseDurationSec)&&(identical(other.transitionShiftDurationSec, transitionShiftDurationSec) || other.transitionShiftDurationSec == transitionShiftDurationSec)&&(identical(other.shiftDurationSec, shiftDurationSec) || other.shiftDurationSec == shiftDurationSec)&&(identical(other.endgameDurationSec, endgameDurationSec) || other.endgameDurationSec == endgameDurationSec)&&(identical(other.warningRemainingDurationSec, warningRemainingDurationSec) || other.warningRemainingDurationSec == warningRemainingDurationSec)&&(identical(other.timeoutDurationSec, timeoutDurationSec) || other.timeoutDurationSec == timeoutDurationSec));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,warmupDurationSec,autoDurationSec,pauseDurationSec,teleopDurationSec,warningRemainingDurationSec,timeoutDurationSec);
+int get hashCode => Object.hash(runtimeType,autoDurationSec,pauseDurationSec,transitionShiftDurationSec,shiftDurationSec,endgameDurationSec,warningRemainingDurationSec,timeoutDurationSec);
 
 @override
 String toString() {
-  return 'CheesyMatchTiming(warmupDurationSec: $warmupDurationSec, autoDurationSec: $autoDurationSec, pauseDurationSec: $pauseDurationSec, teleopDurationSec: $teleopDurationSec, warningRemainingDurationSec: $warningRemainingDurationSec, timeoutDurationSec: $timeoutDurationSec)';
+  return 'CheesyMatchTiming(autoDurationSec: $autoDurationSec, pauseDurationSec: $pauseDurationSec, transitionShiftDurationSec: $transitionShiftDurationSec, shiftDurationSec: $shiftDurationSec, endgameDurationSec: $endgameDurationSec, warningRemainingDurationSec: $warningRemainingDurationSec, timeoutDurationSec: $timeoutDurationSec)';
 }
 
 
@@ -1362,7 +1364,7 @@ abstract mixin class _$CheesyMatchTimingCopyWith<$Res> implements $CheesyMatchTi
   factory _$CheesyMatchTimingCopyWith(_CheesyMatchTiming value, $Res Function(_CheesyMatchTiming) _then) = __$CheesyMatchTimingCopyWithImpl;
 @override @useResult
 $Res call({
-@JsonKey(name: 'WarmupDurationSec') int warmupDurationSec,@JsonKey(name: 'AutoDurationSec') int autoDurationSec,@JsonKey(name: 'PauseDurationSec') int pauseDurationSec,@JsonKey(name: 'TeleopDurationSec') int teleopDurationSec,@JsonKey(name: 'WarningRemainingDurationSec') int warningRemainingDurationSec,@JsonKey(name: 'TimeoutDurationSec') int timeoutDurationSec
+@JsonKey(name: 'AutoDurationSec') int autoDurationSec,@JsonKey(name: 'PauseDurationSec') int pauseDurationSec,@JsonKey(name: 'TransitionShiftDurationSec') int transitionShiftDurationSec,@JsonKey(name: 'ShiftDurationSec') int shiftDurationSec,@JsonKey(name: 'EndgameDurationSec') int endgameDurationSec,@JsonKey(name: 'WarningRemainingDurationSec') int warningRemainingDurationSec,@JsonKey(name: 'TimeoutDurationSec') int timeoutDurationSec
 });
 
 
@@ -1379,12 +1381,13 @@ class __$CheesyMatchTimingCopyWithImpl<$Res>
 
 /// Create a copy of CheesyMatchTiming
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? warmupDurationSec = null,Object? autoDurationSec = null,Object? pauseDurationSec = null,Object? teleopDurationSec = null,Object? warningRemainingDurationSec = null,Object? timeoutDurationSec = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? autoDurationSec = null,Object? pauseDurationSec = null,Object? transitionShiftDurationSec = null,Object? shiftDurationSec = null,Object? endgameDurationSec = null,Object? warningRemainingDurationSec = null,Object? timeoutDurationSec = null,}) {
   return _then(_CheesyMatchTiming(
-warmupDurationSec: null == warmupDurationSec ? _self.warmupDurationSec : warmupDurationSec // ignore: cast_nullable_to_non_nullable
-as int,autoDurationSec: null == autoDurationSec ? _self.autoDurationSec : autoDurationSec // ignore: cast_nullable_to_non_nullable
+autoDurationSec: null == autoDurationSec ? _self.autoDurationSec : autoDurationSec // ignore: cast_nullable_to_non_nullable
 as int,pauseDurationSec: null == pauseDurationSec ? _self.pauseDurationSec : pauseDurationSec // ignore: cast_nullable_to_non_nullable
-as int,teleopDurationSec: null == teleopDurationSec ? _self.teleopDurationSec : teleopDurationSec // ignore: cast_nullable_to_non_nullable
+as int,transitionShiftDurationSec: null == transitionShiftDurationSec ? _self.transitionShiftDurationSec : transitionShiftDurationSec // ignore: cast_nullable_to_non_nullable
+as int,shiftDurationSec: null == shiftDurationSec ? _self.shiftDurationSec : shiftDurationSec // ignore: cast_nullable_to_non_nullable
+as int,endgameDurationSec: null == endgameDurationSec ? _self.endgameDurationSec : endgameDurationSec // ignore: cast_nullable_to_non_nullable
 as int,warningRemainingDurationSec: null == warningRemainingDurationSec ? _self.warningRemainingDurationSec : warningRemainingDurationSec // ignore: cast_nullable_to_non_nullable
 as int,timeoutDurationSec: null == timeoutDurationSec ? _self.timeoutDurationSec : timeoutDurationSec // ignore: cast_nullable_to_non_nullable
 as int,

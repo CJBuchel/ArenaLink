@@ -10,24 +10,6 @@ class MatchStatsPanel extends HookWidget {
 
   const MatchStatsPanel({super.key, required this.field});
 
-  // ── Countdown ─────────────────────────────────────────────────────────────
-
-  int? _countdownSec() {
-    final elapsed = field.matchTimeSec;
-    final auto = field.autoDurationSec;
-    final pause = field.pauseDurationSec;
-    final teleop = field.teleopDurationSec;
-    return switch (field.matchState) {
-      MatchStateConst.startMatch => auto,
-      MatchStateConst.autoPeriod => (auto - elapsed).clamp(0, auto),
-      MatchStateConst.pausePeriod =>
-        ((auto + pause) - elapsed).clamp(0, pause),
-      MatchStateConst.teleopPeriod =>
-        ((auto + pause + teleop) - elapsed).clamp(0, teleop),
-      _ => null,
-    };
-  }
-
   static String _fmtTime(int? sec) {
     if (sec == null) return '—:—';
     final m = sec ~/ 60;
@@ -143,7 +125,6 @@ class MatchStatsPanel extends HookWidget {
     }, [field.scheduleOffset]);
 
     final ms = field.matchState;
-    final countdown = _countdownSec();
     final phase = _phaseLabel(ms);
     final phaseClr = _phaseColor(ms);
 
@@ -171,15 +152,14 @@ class MatchStatsPanel extends HookWidget {
           children: [
             // ── Match ──────────────────────────────────────────────────────
             _Section(
-              label: 'MATCH  #${field.matchId}',
+              label: 'MATCH',
               flex: 2,
               children: [
                 _LabelTile(value: phase, color: phaseClr, sub: 'STATE'),
                 _LabelTile(
-                  icon: Icons.timer_rounded,
-                  value: _fmtTime(countdown),
-                  color: countdown != null ? phaseClr : labelDim,
-                  sub: 'TIME',
+                  value: field.matchName.isNotEmpty ? field.matchName : '—',
+                  color: labelFaint,
+                  sub: 'MATCH',
                 ),
               ],
             ),
