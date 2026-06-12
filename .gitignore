@@ -31,9 +31,7 @@ logs/
 
 # ─── Environment / secrets ────────────────────────────────────────────────────
 .env
-server/.env
-# Keep the example so contributors know what's needed
-!server/.env.example
+**/.env
 
 # ─── Claude AI ────────────────────────────────────────────────────────────────
 .claude/
