@@ -7,8 +7,8 @@ import 'package:arena_link/views/field_monitor/widgets/conn_pill.dart';
 
 typedef BattThresholds = ({double warning, double critical});
 
-const BattThresholds battThresholdsIdle   = (warning: 11.8, critical: 11.4);
-const BattThresholds battThresholdsActive = (warning: 11.0, critical: 10.5);
+const BattThresholds battThresholdsIdle   = (warning: 11.8, critical: 11.0);
+const BattThresholds battThresholdsActive = (warning: 10.5, critical: 9.8);
 
 /// Returns the appropriate thresholds based on matchState.
 /// Auto (2) and Teleop (4) are enabled periods drawing real current.
@@ -23,16 +23,9 @@ BattThresholds battThresholds(int matchState) =>
 const int pingOkMs = 10;
 const int pingWarnMs = 50;
 
-// ─── Issue tracking (placeholder – no backend yet) ────────────────────────────
+// ─── Issue tracking ───────────────────────────────────────────────────────────
 
 enum IssueStatus { none, flagged, inProgress, resolved }
-
-IssueStatus demoIssue(String key) => switch (key) {
-  'R1' => IssueStatus.flagged,
-  'R2' => IssueStatus.inProgress,
-  'B1' => IssueStatus.resolved,
-  _ => IssueStatus.none,
-};
 
 // ─── Alert severity ───────────────────────────────────────────────────────────
 
@@ -116,8 +109,8 @@ StateDisplay computeStationState(StationStatus station, int matchState) {
     return (
       label: 'RADIO',
       subs: _radioSubs(station.radioLink, ds),
-      color: arenaAmber,
-      severity: StationSeverity.warning,
+      color: arenaRed,
+      severity: StationSeverity.critical,
       allianceMode: AllianceMode.dim,
     );
   }
@@ -134,8 +127,8 @@ StateDisplay computeStationState(StationStatus station, int matchState) {
     return (
       label: 'CODE',
       subs: const [],
-      color: arenaAmber,
-      severity: StationSeverity.warning,
+      color: arenaRed,
+      severity: StationSeverity.critical,
       allianceMode: AllianceMode.dim,
     );
   }
@@ -211,6 +204,8 @@ ConnStatus dsConnStatus(StationStatus s) {
 ConnStatus radioConnStatus(StationStatus s) {
   if (s.radioLink.linked) return ConnStatus.ok;
   if (s.dsLink?.radioLinked == true) return ConnStatus.degraded;
+  // If DS is linked we definitively know radio is down; otherwise no data.
+  if (s.dsLink?.dsLinked == true) return ConnStatus.error;
   return ConnStatus.none;
 }
 

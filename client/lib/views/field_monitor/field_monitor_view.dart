@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:arena_link/models/arena_state.dart';
 import 'package:arena_link/providers/arena_provider.dart';
+import 'package:arena_link/providers/ticket_status_provider.dart';
 import 'package:arena_link/views/field_monitor/widgets/alliance_panel.dart';
 import 'package:arena_link/views/field_monitor/widgets/field_status_panel.dart';
 import 'package:arena_link/views/field_monitor/widgets/match_stats_panel.dart';
@@ -11,6 +12,9 @@ class FieldMonitorView extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Ensure the ticket status WS service is running.
+    ref.watch(ticketStatusProvider);
+
     final arena = ref.watch(arenaProvider);
 
     if (arena.field == null) {

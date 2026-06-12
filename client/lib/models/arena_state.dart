@@ -215,6 +215,42 @@ class ScoringPosition {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// MATCH PERIOD TIMER  (generic countdown — backends compute this)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/// A backend-agnostic period countdown.
+///
+/// Backends compute this from whatever timing data they have — raw elapsed
+/// time + stored phase durations, a direct remaining-seconds wire value, etc.
+/// null fields mean the backend cannot provide that information.
+///
+/// Design note: Cheesy Arena splits teleop into sub-periods and sends elapsed
+/// time per phase; the real FMS sends a flat remaining-seconds value.  Both
+/// map here — the backend is responsible for the translation.
+class MatchPeriodTimer {
+  /// Short label for the current period: "AUTO", "TELEOP", "PAUSE", "TIMEOUT".
+  /// Empty string when no timed period is active.
+  final String periodLabel;
+
+  /// Seconds remaining in the current period.
+  /// null = not in a timed period (pre-match, post-match, etc.).
+  final int? countdownSec;
+
+  /// Total duration of the current period in seconds.
+  /// null = unknown to this backend (progress bar not possible).
+  final int? periodTotalSec;
+
+  const MatchPeriodTimer({
+    this.periodLabel = '',
+    this.countdownSec,
+    this.periodTotalSec,
+  });
+
+  /// True when a countdown is actively running.
+  bool get isActive => countdownSec != null;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // FIELD MONITOR STATE  (everything the field monitor view needs)
 // Updated from potentially many different backend endpoints/messages.
 // Fields that a backend cannot provide keep their defaults.
@@ -225,12 +261,21 @@ class FieldMonitorState {
   final int matchId;
   final String matchName; // short name, e.g. "Q12", "P1", "SF1-1"
   final int matchType;    // see MatchTypeConst
+  // Backends must normalise this to a plain local DateTime before storing.
+  // Wire-format quirks (UTC offsets, server timezone) are the backend's problem.
   final DateTime? scheduledStart;
 
   // ── Match phase & timing ───────────────────────────────────────────────
   final int matchState; // see MatchStateConst
   final bool canStartMatch;
-  final int matchTimeSec; // elapsed seconds since match start
+  // Raw elapsed seconds reported by the backend (semantics vary by backend:
+  // Cheesy Arena resets per phase; other backends may count from match start).
+  final int matchTimeSec;
+
+  // ── Period countdown timer ─────────────────────────────────────────────
+  // Computed by the backend from matchTimeSec + phase durations (or from a
+  // direct remaining-time wire value).  Backends set only what they know.
+  final MatchPeriodTimer timer;
 
   // ── Alliance stations ──────────────────────────────────────────────────
   // Keys: R1, R2, R3, B1, B2, B3
@@ -261,6 +306,7 @@ class FieldMonitorState {
     this.matchState = MatchStateConst.preMatch,
     this.canStartMatch = false,
     this.matchTimeSec = 0,
+    this.timer = const MatchPeriodTimer(),
     this.stations = const {},
     this.hardware = const HardwareState(),
     this.redScore,
@@ -278,6 +324,7 @@ class FieldMonitorState {
     int? matchState,
     bool? canStartMatch,
     int? matchTimeSec,
+    MatchPeriodTimer? timer,
     Map<String, StationStatus>? stations,
     HardwareState? hardware,
     Object? redScore = _sentinel,
@@ -296,6 +343,7 @@ class FieldMonitorState {
       matchState: matchState ?? this.matchState,
       canStartMatch: canStartMatch ?? this.canStartMatch,
       matchTimeSec: matchTimeSec ?? this.matchTimeSec,
+      timer: timer ?? this.timer,
       stations: stations ?? this.stations,
       hardware: hardware ?? this.hardware,
       redScore: redScore == _sentinel ? this.redScore : redScore as int?,

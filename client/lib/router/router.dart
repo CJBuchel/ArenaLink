@@ -9,6 +9,8 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 // Deferred
 import 'package:arena_link/views/field_monitor/field_monitor_view.dart'
     deferred as fieldMonitor;
+import 'package:arena_link/views/settings/settings_view.dart'
+    deferred as settingsView;
 
 part 'router.g.dart';
 
@@ -102,6 +104,18 @@ GoRouter router(Ref ref) {
                 libraryKey: AppRoute.fieldMonitor.path,
                 libraryLoader: fieldMonitor.loadLibrary,
                 builder: (context) => fieldMonitor.FieldMonitorView(),
+              ),
+            ),
+          ),
+          GoRoute(
+            name: AppRoute.settings.name,
+            path: AppRoute.settings.path,
+            pageBuilder: (context, state) => _buildTransitionPage(
+              key: state.pageKey,
+              child: DeferredWidget(
+                libraryKey: AppRoute.settings.path,
+                libraryLoader: settingsView.loadLibrary,
+                builder: (context) => settingsView.SettingsView(),
               ),
             ),
           ),

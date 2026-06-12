@@ -117,8 +117,9 @@ abstract class CheesyMatchTiming with _$CheesyMatchTiming {
   const factory CheesyMatchTiming({
     @JsonKey(name: 'AutoDurationSec') @Default(15) int autoDurationSec,
     @JsonKey(name: 'PauseDurationSec') @Default(3) int pauseDurationSec,
-    // Cheesy Arena does not send a flat TeleopDurationSec — teleop is split into
-    // three sub-periods. Sum them to get the total teleop window.
+    // Cheesy Arena does not send a flat TeleopDurationSec.  Compute it as:
+    //   TransitionShift + 4 × Shift + Endgame
+    // (mirrors game.GetTeleopDurationSec() in cheesy-arena/game/match_timing.go)
     @JsonKey(name: 'TransitionShiftDurationSec') @Default(10) int transitionShiftDurationSec,
     @JsonKey(name: 'ShiftDurationSec') @Default(25) int shiftDurationSec,
     @JsonKey(name: 'EndgameDurationSec') @Default(30) int endgameDurationSec,
@@ -175,7 +176,7 @@ abstract class CheesyMatch with _$CheesyMatch {
     @JsonKey(name: 'Blue3') @Default(0) int blue3,
     @JsonKey(name: 'Blue3IsSurrogate') @Default(false) bool blue3IsSurrogate,
     @JsonKey(name: 'Status') @Default(0) int status,
-    @JsonKey(name: 'ScheduledStartTime') DateTime? scheduledStartTime,
+    @JsonKey(name: 'Time') DateTime? scheduledStartTime,
   }) = _CheesyMatch;
 
   factory CheesyMatch.fromJson(Map<String, dynamic> json) =>

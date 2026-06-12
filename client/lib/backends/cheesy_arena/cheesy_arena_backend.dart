@@ -11,6 +11,12 @@ class CheesyArenaBackend implements ArenaBackend {
   WebSocketHelper? _stationWs;
   WebSocketHelper? _refereeWs;
 
+  // Cached match timing received from the 'matchTiming' websocket message.
+  // Used to compute per-period countdowns from the elapsed matchTimeSec.
+  // Cheesy Arena sends this once per match load; we keep the last known value.
+  CheesyMatchTiming _timing = const CheesyMatchTiming();
+
+
   StreamSubscription<String>? _messageSub;
   StreamSubscription<WebSocketStatus>? _statusSub;
   StreamSubscription<String>? _stationMessageSub;
@@ -102,7 +108,7 @@ class CheesyArenaBackend implements ArenaBackend {
         case 'matchTime':
           _mergeMatchTime(CheesyMatchTimeMessage.fromJson(data));
         case 'matchTiming':
-          break; // timing sub-fields not used
+          _timing = CheesyMatchTiming.fromJson(data);
         case 'eventStatus':
           _mergeEventStatus(CheesyEventStatus.fromJson(data));
         case 'realtimeScore':
@@ -203,7 +209,7 @@ class CheesyArenaBackend implements ArenaBackend {
       matchId: s.match.id,
       matchName: s.match.shortName,
       matchType: s.match.type,
-      scheduledStart: s.match.scheduledStartTime,
+      scheduledStart: _normalizeScheduledTime(s.match.scheduledStartTime),
       stations: updated,
     );
     _update(_arena.copyWith(field: field));
@@ -214,8 +220,49 @@ class CheesyArenaBackend implements ArenaBackend {
     final field = current.copyWith(
       matchState: s.matchState,
       matchTimeSec: s.matchTimeSec,
+      timer: _computeTimer(s.matchState, s.matchTimeSec),
     );
     _update(_arena.copyWith(field: field));
+  }
+
+  /// Compute a generic [MatchPeriodTimer] from the stored [_timing] phase
+  /// durations and the cumulative [elapsedSec] from match start.
+  ///
+  /// Cheesy Arena's [matchTimeSec] is `time.Since(matchStartTime)` — a
+  /// continuous counter from the moment the match started, not a per-phase
+  /// counter.  Countdowns are therefore derived from phase-boundary absolute
+  /// times, not from the raw elapsed value.
+  ///
+  /// Teleop duration: Cheesy Arena computes it as
+  ///   `TransitionShift + 4 × Shift + Endgame`
+  /// (the Shift sub-period repeats four times in the current game).
+  MatchPeriodTimer _computeTimer(int matchState, int elapsedSec) {
+    final t = _timing;
+    final autoEnd = t.autoDurationSec;
+    final pauseEnd = autoEnd + t.pauseDurationSec;
+    // Mirror game.GetTeleopDurationSec() from cheesy-arena/game/match_timing.go
+    final teleopDuration =
+        t.transitionShiftDurationSec + 4 * t.shiftDurationSec + t.endgameDurationSec;
+    final teleopEnd = pauseEnd + teleopDuration;
+
+    return switch (matchState) {
+      MatchStateConst.autoPeriod => MatchPeriodTimer(
+        periodLabel: 'AUTO',
+        countdownSec: (autoEnd - elapsedSec).clamp(0, autoEnd),
+        periodTotalSec: autoEnd,
+      ),
+      MatchStateConst.pausePeriod => MatchPeriodTimer(
+        periodLabel: 'PAUSE',
+        countdownSec: (pauseEnd - elapsedSec).clamp(0, t.pauseDurationSec),
+        periodTotalSec: t.pauseDurationSec,
+      ),
+      MatchStateConst.teleopPeriod => MatchPeriodTimer(
+        periodLabel: 'TELEOP',
+        countdownSec: (teleopEnd - elapsedSec).clamp(0, teleopDuration),
+        periodTotalSec: teleopDuration,
+      ),
+      _ => const MatchPeriodTimer(),
+    };
   }
 
   void _mergeEventStatus(CheesyEventStatus s) {
@@ -305,6 +352,11 @@ class CheesyArenaBackend implements ArenaBackend {
     signalNoiseRatio: w.signalNoiseRatio,
     connectionQuality: w.connectionQuality,
   );
+
+  /// Pass the raw UTC DateTime through unchanged.
+  /// The UI layer applies the user-configured timezone offset for display and
+  /// compares in UTC for the schedule-delta calculation.
+  static DateTime? _normalizeScheduledTime(DateTime? raw) => raw;
 
   static BackendConnectionStatus _mapConnection(WebSocketStatus s) =>
       switch (s) {

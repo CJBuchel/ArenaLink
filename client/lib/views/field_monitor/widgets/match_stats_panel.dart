@@ -2,20 +2,15 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:arena_link/colors.dart';
 import 'package:arena_link/models/arena_state.dart';
+import 'package:arena_link/providers/settings_provider.dart';
 
-class MatchStatsPanel extends HookWidget {
+class MatchStatsPanel extends HookConsumerWidget {
   final FieldMonitorState field;
 
   const MatchStatsPanel({super.key, required this.field});
-
-  static String _fmtTime(int? sec) {
-    if (sec == null) return '—:—';
-    final m = sec ~/ 60;
-    final s = sec % 60;
-    return '$m:${s.toString().padLeft(2, '0')}';
-  }
 
   // ── Phase label + color ───────────────────────────────────────────────────
 
@@ -42,74 +37,74 @@ class MatchStatsPanel extends HookWidget {
 
   // ── Schedule helpers ──────────────────────────────────────────────────────
 
-  static ({String label, String timeStr, Color color}) _scheduleFromTime(
-      DateTime scheduled, DateTime now) {
-    const green = arenaGreen;
-    const red = arenaRed;
-
-    final diff = now.difference(scheduled);
-    final absSec = diff.inSeconds.abs();
-    final timeStr = _fmtTime(absSec);
-
-    if (absSec < 5) {
-      return (label: 'ON TIME', timeStr: '0:00', color: green);
-    }
-    return diff.isNegative
-        ? (label: 'AHEAD', timeStr: timeStr, color: green)
-        : (label: 'BEHIND', timeStr: timeStr, color: red);
+  /// Format a DateTime as a 12-hour clock string, e.g. "9:36 PM".
+  ///
+  /// [offsetHours] is the UTC offset of the arena server (from AppSettings).
+  /// 0 means "use device local timezone" via toLocal(), which is correct when
+  /// the device is in the same timezone as the event.  A non-zero value shifts
+  /// the stored UTC time into the server's wall-clock time for display.
+  static String _fmtScheduledTime(DateTime? dt, int offsetHours) {
+    if (dt == null || dt.year < 2000) return '—';
+    final eff = offsetHours != 0
+        ? offsetHours
+        : DateTime.now().timeZoneOffset.inHours;
+    final displayed = dt.toUtc().add(Duration(hours: eff));
+    final h = displayed.hour % 12 == 0 ? 12 : displayed.hour % 12;
+    final m = displayed.minute.toString().padLeft(2, '0');
+    final amPm = displayed.hour < 12 ? 'AM' : 'PM';
+    return '$h:$m $amPm';
   }
 
-  static ({String label, String timeStr, Color color}) _scheduleFromAnchor(
-      _SchedAnchor? anchor, DateTime now) {
-    const grey = labelDim;
-    const green = arenaGreen;
-    const red = arenaRed;
-
-    if (anchor == null) return (label: '—', timeStr: '—:—', color: grey);
-    if (anchor.onTime) return (label: 'ON TIME', timeStr: '0:00', color: green);
-
-    final liveSec =
-        anchor.baseSec + now.difference(anchor.capturedAt).inSeconds;
-    final timeStr = _fmtTime(liveSec.clamp(0, liveSec));
-
-    return anchor.isLate
-        ? (label: 'BEHIND', timeStr: timeStr, color: red)
-        : (label: 'AHEAD', timeStr: timeStr, color: green);
+  /// Compute the live signed delta: ahead (+) or behind (-) the scheduled time.
+  ///
+  /// Both sides are compared in UTC so the result is correct regardless of
+  /// device timezone or [offsetHours] — UTC offsets cancel out in subtraction.
+  static ({String label, Color color}) _computeDelta(
+      DateTime? scheduled, DateTime now) {
+    if (scheduled == null || scheduled.year < 2000) {
+      return (label: '—', color: labelDim);
+    }
+    // diff > 0  →  now is past the scheduled time  →  running late
+    final diff = now.toUtc().difference(scheduled.toUtc());
+    final absSec = diff.inSeconds.abs();
+    if (absSec < 30) {
+      return (label: '+0:00', color: arenaGreen);
+    }
+    final m = absSec ~/ 60;
+    final s = absSec % 60;
+    final t = '$m:${s.toString().padLeft(2, '0')}';
+    return diff.isNegative
+        ? (label: '+$t', color: arenaGreen) // ahead — haven't reached sched yet
+        : (label: '-$t', color: arenaRed);  // late  — past scheduled time
   }
 
   // ── Cycle time parsing ────────────────────────────────────────────────────
 
   static ({String timeStr, String label, Color color}) _parseCycle(
       String? cycle) {
-    const grey = labelDim;
-    const green = arenaGreen;
-    const red = arenaRed;
-    const white = labelFaint;
-
     if (cycle == null || cycle.isEmpty) {
-      return (timeStr: '—:—', label: '—', color: grey);
+      return (timeStr: '—:—', label: '—', color: labelDim);
     }
-
     final actualMatch = RegExp(r'^(\d+:\d{2}(?::\d{2})?)').firstMatch(cycle);
     final timeStr = actualMatch?.group(1) ?? '—:—';
 
     final deltaMatch =
         RegExp(r'\([\d:]+\s+(slower|faster)').firstMatch(cycle.toLowerCase());
-
     if (deltaMatch == null) {
-      return (timeStr: timeStr, label: '—', color: white);
+      return (timeStr: timeStr, label: '—', color: labelFaint);
     }
-
     final isFaster = deltaMatch.group(1) == 'faster';
     return (
       timeStr: timeStr,
       label: isFaster ? 'FAST' : 'SLOW',
-      color: isFaster ? green : red,
+      color: isFaster ? arenaGreen : arenaRed,
     );
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final offsetHours = ref.watch(appSettingsProvider).serverTimezoneOffsetHours;
+
     final now = useState(DateTime.now());
     useEffect(() {
       final timer = Timer.periodic(const Duration(seconds: 1), (_) {
@@ -118,22 +113,13 @@ class MatchStatsPanel extends HookWidget {
       return timer.cancel;
     }, const []);
 
-    final anchor = useState<_SchedAnchor?>(null);
-    useEffect(() {
-      anchor.value = _SchedAnchor.parse(field.scheduleOffset);
-      return null;
-    }, [field.scheduleOffset]);
-
     final ms = field.matchState;
     final phase = _phaseLabel(ms);
     final phaseClr = _phaseColor(ms);
 
-    final hasScheduledTime =
-        field.scheduledStart != null && field.scheduledStart!.year > 2000;
-    final sched = hasScheduledTime
-        ? _scheduleFromTime(field.scheduledStart!, now.value)
-        : _scheduleFromAnchor(anchor.value, now.value);
-
+    final scheduled = field.scheduledStart;
+    final schedStr = _fmtScheduledTime(scheduled, offsetHours);
+    final delta = _computeDelta(scheduled, now.value);
     final cycle = _parseCycle(
       field.cycleTime.isNotEmpty ? field.cycleTime : null,
     );
@@ -166,15 +152,23 @@ class MatchStatsPanel extends HookWidget {
             _Divider(),
 
             // ── Timing ─────────────────────────────────────────────────────
+            // Three items: scheduled clock time | live ±delta | cycle time
             _Section(
               label: 'TIMING',
-              flex: 3,
+              flex: 4,
               children: [
-                _StatusValueTile(
-                  topLabel: sched.label,
-                  value: sched.timeStr,
+                _LabelTile(
+                  icon: Icons.schedule_rounded,
+                  value: schedStr,
+                  color: labelFaint,
                   sub: 'SCHED',
-                  color: sched.color,
+                  valueFontSize: 12,
+                ),
+                _LabelTile(
+                  icon: Icons.swap_vert_rounded,
+                  value: delta.label,
+                  color: delta.color,
+                  sub: 'DELTA',
                 ),
                 _StatusValueTile(
                   topLabel: cycle.label,
@@ -326,6 +320,7 @@ class _LabelTile extends StatelessWidget {
   final Color color;
   final IconData? icon;
   final Color? dot;
+  final double valueFontSize;
 
   const _LabelTile({
     required this.value,
@@ -333,6 +328,7 @@ class _LabelTile extends StatelessWidget {
     required this.color,
     this.icon,
     this.dot,
+    this.valueFontSize = 15,
   });
 
   @override
@@ -355,7 +351,7 @@ class _LabelTile extends StatelessWidget {
         Text(
           value,
           style: TextStyle(
-            fontSize: 15,
+            fontSize: valueFontSize,
             fontWeight: FontWeight.w800,
             color: color,
             height: 1.0,
@@ -389,46 +385,6 @@ class _Divider extends StatelessWidget {
         thickness: 0.5,
         color: surfaceBorder,
       ),
-    );
-  }
-}
-
-// ─── Schedule anchor ──────────────────────────────────────────────────────────
-
-class _SchedAnchor {
-  final int baseSec;
-  final bool isLate;
-  final bool onTime;
-  final DateTime capturedAt;
-
-  const _SchedAnchor({
-    required this.baseSec,
-    required this.isLate,
-    required this.onTime,
-    required this.capturedAt,
-  });
-
-  static _SchedAnchor? parse(String? msg) {
-    if (msg == null || msg.isEmpty) return null;
-    final lower = msg.toLowerCase();
-
-    if (lower.contains('on schedule')) {
-      return _SchedAnchor(
-        baseSec: 0,
-        isLate: false,
-        onTime: true,
-        capturedAt: DateTime.now(),
-      );
-    }
-
-    final m = RegExp(r'(\d+) minutes? (late|early)').firstMatch(lower);
-    if (m == null) return null;
-
-    return _SchedAnchor(
-      baseSec: int.parse(m.group(1)!) * 60,
-      isLate: m.group(2) == 'late',
-      onTime: false,
-      capturedAt: DateTime.now(),
     );
   }
 }

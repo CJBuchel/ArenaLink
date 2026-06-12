@@ -4,3 +4,26 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+anyhow = "1.0.102"
+async-stream = "0.3.6"
+axum = { version = "0.8.9", features = ["ws"] }
+tower-http = { version = "0.6", features = ["cors"] }
+chrono = "0.4.45"
+chrono-tz = "0.10.4"
+clap = { version = "4.6.1", features = ["derive", "env"] }
+dotenvy = "0.15"
+log = "0.4.32"
+log4rs = "1.4.0"
+once_cell = "1.21.4"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serenity = { version = "=0.12.4", default-features = false, features = ["client", "gateway", "model", "http", "rustls_backend"] }
+# Pin time to avoid coherence conflict with serenity 0.12's blanket From<S: Into<String>> impls.
+# time >= 0.3.40-ish added From<HourBase> for associated types which conflicts.
+time = "=0.3.36"
+tokio = { version = "1.52.3", features = ["rt-multi-thread", "macros", "signal", "sync"] }
+tokio-stream = { version = "0.1.18", features = ["sync"] }
+tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
+
+[dependencies.database]
+path = "../database"

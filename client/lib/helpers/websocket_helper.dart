@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:arena_link/utils/logger.dart';
 
 enum WebSocketStatus { disconnected, connecting, connected, reconnecting }
 
@@ -54,14 +55,12 @@ class WebSocketHelper {
   }
 
   // ─── Watchdog ─────────────────────────────────────────────────────────────
-  // If we're connected but receive no messages for silenceTimeout, the
-  // connection is silently dead. Restart it.
 
   void _startWatchdog() {
     _lastActivity = DateTime.now();
     _watchdogTimer?.cancel();
     _watchdogTimer = Timer.periodic(
-      silenceTimeout ~/ 2, // check at half the timeout interval
+      silenceTimeout ~/ 2,
       (_) => _checkAlive(),
     );
   }
@@ -74,6 +73,7 @@ class WebSocketHelper {
   void _checkAlive() {
     if (_disposed || !_active || _status != WebSocketStatus.connected) return;
     if (DateTime.now().difference(_lastActivity) >= silenceTimeout) {
+      AppLogger().w('[WS] $url — silence timeout, reconnecting');
       _scheduleReconnect();
     }
   }
@@ -90,13 +90,14 @@ class WebSocketHelper {
     }
 
     _setStatus(WebSocketStatus.connecting);
+    AppLogger().d('[WS] Connecting to $url'
+        '${_reconnectAttempts > 0 ? ' (attempt $_reconnectAttempts)' : ''}');
 
     try {
       _channel = WebSocketChannel.connect(Uri.parse(url));
       await _channel!.ready.timeout(const Duration(seconds: 5));
 
       if (!_active || _disposed) {
-        // Disconnected while we were waiting for the handshake.
         _channel?.sink.close();
         _channel = null;
         return;
@@ -104,6 +105,7 @@ class WebSocketHelper {
 
       _reconnectAttempts = 0;
       _setStatus(WebSocketStatus.connected);
+      AppLogger().i('[WS] Connected to $url');
       _startWatchdog();
 
       _channel!.stream.listen(
@@ -113,17 +115,20 @@ class WebSocketHelper {
             _messageController.add(data.toString());
           }
         },
-        onError: (_) {
+        onError: (Object e) {
+          AppLogger().w('[WS] Stream error on $url — ${e.runtimeType}: $e');
           _stopWatchdog();
           if (!_disposed && _active) _scheduleReconnect();
         },
         onDone: () {
+          AppLogger().d('[WS] Stream closed for $url');
           _stopWatchdog();
           if (!_disposed && _active) _scheduleReconnect();
         },
         cancelOnError: true,
       );
-    } catch (_) {
+    } catch (e, st) {
+      AppLogger().w('[WS] Failed to connect to $url — $e\n$st');
       _stopWatchdog();
       if (!_disposed && _active) _scheduleReconnect();
     }
@@ -132,6 +137,7 @@ class WebSocketHelper {
   /// Tear down the current connection and reconnect immediately (resets backoff).
   void reconnect() {
     if (_disposed) return;
+    AppLogger().d('[WS] Manual reconnect requested for $url');
     _reconnectAttempts = 0;
     _stopWatchdog();
     _reconnectTimer?.cancel();
@@ -139,19 +145,21 @@ class WebSocketHelper {
     _channel = null;
     _active = true;
     _setStatus(WebSocketStatus.reconnecting);
-    // Small delay to let the OS clean up the old socket before re-opening.
     _reconnectTimer = Timer(const Duration(milliseconds: 200), connect);
   }
 
   void send(String message) {
     if (_status == WebSocketStatus.connected) {
       _channel?.sink.add(message);
+    } else {
+      AppLogger().w('[WS] send() called while not connected ($url)');
     }
   }
 
   /// Stop attempting to connect. Does NOT dispose — connect()/reconnect()
   /// can be called again later.
   void disconnect() {
+    AppLogger().d('[WS] Disconnecting from $url');
     _active = false;
     _stopWatchdog();
     _reconnectTimer?.cancel();
@@ -162,6 +170,7 @@ class WebSocketHelper {
 
   /// Permanent teardown. The helper cannot be reused after this.
   void dispose() {
+    AppLogger().d('[WS] Disposing $url');
     _disposed = true;
     _active = false;
     _stopWatchdog();
@@ -178,6 +187,7 @@ class WebSocketHelper {
     if (_disposed || !_active) return;
     if (maxReconnectAttempts > 0 &&
         _reconnectAttempts >= maxReconnectAttempts) {
+      AppLogger().w('[WS] Max reconnect attempts ($maxReconnectAttempts) reached for $url');
       _active = false;
       _setStatus(WebSocketStatus.disconnected);
       return;
@@ -196,6 +206,7 @@ class WebSocketHelper {
           maxReconnectDelay.inMilliseconds,
         );
 
+    AppLogger().d('[WS] Reconnecting to $url in ${delayMs}ms (attempt $_reconnectAttempts)');
     _reconnectTimer?.cancel();
     _reconnectTimer = Timer(Duration(milliseconds: delayMs), connect);
   }

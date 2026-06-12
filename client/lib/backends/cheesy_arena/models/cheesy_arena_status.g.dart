@@ -154,9 +154,9 @@ _CheesyMatch _$CheesyMatchFromJson(Map<String, dynamic> json) => _CheesyMatch(
   blue3: (json['Blue3'] as num?)?.toInt() ?? 0,
   blue3IsSurrogate: json['Blue3IsSurrogate'] as bool? ?? false,
   status: (json['Status'] as num?)?.toInt() ?? 0,
-  scheduledStartTime: json['ScheduledStartTime'] == null
+  scheduledStartTime: json['Time'] == null
       ? null
-      : DateTime.parse(json['ScheduledStartTime'] as String),
+      : DateTime.parse(json['Time'] as String),
 );
 
 Map<String, dynamic> _$CheesyMatchToJson(_CheesyMatch instance) =>
@@ -183,7 +183,7 @@ Map<String, dynamic> _$CheesyMatchToJson(_CheesyMatch instance) =>
       'Blue3': instance.blue3,
       'Blue3IsSurrogate': instance.blue3IsSurrogate,
       'Status': instance.status,
-      'ScheduledStartTime': instance.scheduledStartTime?.toIso8601String(),
+      'Time': instance.scheduledStartTime?.toIso8601String(),
     };
 
 _CheesyAllianceStation _$CheesyAllianceStationFromJson(

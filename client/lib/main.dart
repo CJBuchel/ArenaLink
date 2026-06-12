@@ -1,5 +1,6 @@
 import 'package:arena_link/app.dart';
 import 'package:arena_link/helpers/local_storage.dart';
+import 'package:arena_link/utils/logger.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -7,6 +8,8 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 void main() async {
   // Ensure flutter binding is initialized
   WidgetsFlutterBinding.ensureInitialized();
+
+  AppLogger().i('Starting Arena Link Client...');
 
   // Keep the render loop alive even when the window is not in focus.
   // On desktop, Flutter throttles (or pauses) frame production when the

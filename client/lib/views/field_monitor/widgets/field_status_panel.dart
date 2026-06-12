@@ -420,28 +420,93 @@ class _StatusHero extends StatelessWidget {
       text = 'NOT READY';
     }
 
+    final timer = field.timer;
+
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 10),
+      padding: EdgeInsets.symmetric(
+        vertical: timer.isActive ? 10 : 16,
+        horizontal: 10,
+      ),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 22, color: fg),
-          const SizedBox(width: 8),
-          Text(
-            text,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w900,
-              color: fg,
-              letterSpacing: 1.4,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 22, color: fg),
+              const SizedBox(width: 8),
+              Text(
+                text,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w900,
+                  color: fg,
+                  letterSpacing: 1.4,
+                ),
+              ),
+            ],
           ),
+          if (timer.isActive) ...[
+            const SizedBox(height: 7),
+            Container(height: 0.5, color: fg.withValues(alpha: 0.18)),
+            const SizedBox(height: 7),
+            _PeriodTimerRow(timer: timer, fg: fg),
+          ],
         ],
       ),
+    );
+  }
+}
+
+// ─── Period timer row (shown inside the hero when a countdown is active) ──────
+
+class _PeriodTimerRow extends StatelessWidget {
+  final MatchPeriodTimer timer;
+  final Color fg;
+
+  const _PeriodTimerRow({required this.timer, required this.fg});
+
+  static String _fmt(int sec) {
+    final m = sec ~/ 60;
+    final s = sec % 60;
+    return '$m:${s.toString().padLeft(2, '0')}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final countdown = timer.countdownSec!;
+    // On a blue/teal/amber hero background we use the fg (white) for the
+    // number and a dimmer shade for the period label.  We avoid using the
+    // period accent colour directly because it may clash with the hero bg.
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          timer.periodLabel,
+          style: TextStyle(
+            fontSize: 9,
+            fontWeight: FontWeight.w700,
+            color: fg.withValues(alpha: 0.60),
+            letterSpacing: 1.6,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Text(
+          _fmt(countdown),
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w900,
+            color: fg,
+            letterSpacing: 0.5,
+            height: 1.0,
+            fontFeatures: const [FontFeature.tabularFigures()],
+          ),
+        ),
+      ],
     );
   }
 }
