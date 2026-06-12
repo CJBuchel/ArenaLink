@@ -16,7 +16,7 @@ class App extends ConsumerWidget {
     final secondaryColor = Color(0xFF005994);
 
     return MaterialApp.router(
-      title: 'TimeKeeper',
+      title: 'Arena Link',
       debugShowCheckedModeBanner: true,
       routerConfig: ref.watch(routerProvider),
       themeMode: themeMode,

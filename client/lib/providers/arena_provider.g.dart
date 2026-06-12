@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'cheesy_arena_provider.dart';
+part of 'arena_provider.dart';
 
 // **************************************************************************
 // RiverpodGenerator
@@ -9,51 +9,51 @@ part of 'cheesy_arena_provider.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 
-@ProviderFor(CheesyArena)
-final cheesyArenaProvider = CheesyArenaProvider._();
+@ProviderFor(ArenaNotifier)
+final arenaProvider = ArenaNotifierProvider._();
 
-final class CheesyArenaProvider
-    extends $NotifierProvider<CheesyArena, CheesyArenaState> {
-  CheesyArenaProvider._()
+final class ArenaNotifierProvider
+    extends $NotifierProvider<ArenaNotifier, Arena> {
+  ArenaNotifierProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
-        name: r'cheesyArenaProvider',
+        name: r'arenaProvider',
         isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
 
   @override
-  String debugGetCreateSourceHash() => _$cheesyArenaHash();
+  String debugGetCreateSourceHash() => _$arenaNotifierHash();
 
   @$internal
   @override
-  CheesyArena create() => CheesyArena();
+  ArenaNotifier create() => ArenaNotifier();
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(CheesyArenaState value) {
+  Override overrideWithValue(Arena value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<CheesyArenaState>(value),
+      providerOverride: $SyncValueProvider<Arena>(value),
     );
   }
 }
 
-String _$cheesyArenaHash() => r'8f4368bbd069c6f3903ce937e33dd879ae10785d';
+String _$arenaNotifierHash() => r'a5699c9d2728acdb7b3c00a7f41e13c90ee6ba77';
 
-abstract class _$CheesyArena extends $Notifier<CheesyArenaState> {
-  CheesyArenaState build();
+abstract class _$ArenaNotifier extends $Notifier<Arena> {
+  Arena build();
   @$mustCallSuper
   @override
   WhenComplete runBuild() {
-    final ref = this.ref as $Ref<CheesyArenaState, CheesyArenaState>;
+    final ref = this.ref as $Ref<Arena, Arena>;
     final element =
         ref.element
             as $ClassProviderElement<
-              AnyNotifier<CheesyArenaState, CheesyArenaState>,
-              CheesyArenaState,
+              AnyNotifier<Arena, Arena>,
+              Arena,
               Object?,
               Object?
             >;

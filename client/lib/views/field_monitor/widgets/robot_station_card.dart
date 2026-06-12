@@ -1,11 +1,12 @@
+import 'dart:math' show min;
+
 import 'package:flutter/material.dart';
-import 'package:arena_link/models/arena_status.dart';
+import 'package:arena_link/colors.dart';
+import 'package:arena_link/models/arena_state.dart';
 import 'package:arena_link/views/field_monitor/widgets/conn_pill.dart';
 import 'package:arena_link/views/field_monitor/widgets/station_state.dart';
 
 // ─── Icon tile (scalable) ─────────────────────────────────────────────────────
-//
-// [showIcon=false] → value only, no icon (for numeric readouts like voltage/ms)
 
 class _IconTile extends StatelessWidget {
   final IconData icon;
@@ -74,21 +75,9 @@ class _IssueColumn extends StatelessWidget {
     final labelSize = (centerH * 0.09).clamp(7.0, 11.0);
 
     final (icon, color, label) = switch (status) {
-      IssueStatus.flagged => (
-        Icons.flag_rounded,
-        const Color(0xFFEF9F27),
-        'FLAG',
-      ),
-      IssueStatus.inProgress => (
-        Icons.engineering_rounded,
-        const Color(0xFF378ADD),
-        'WIP',
-      ),
-      IssueStatus.resolved => (
-        Icons.task_alt_rounded,
-        const Color(0xFF1D9E75),
-        'DONE',
-      ),
+      IssueStatus.flagged => (Icons.flag_rounded, arenaAmber, 'FLAG'),
+      IssueStatus.inProgress => (Icons.engineering_rounded, arenaBlue, 'WIP'),
+      IssueStatus.resolved => (Icons.task_alt_rounded, arenaGreen, 'DONE'),
       IssueStatus.none => (
         Icons.circle_outlined,
         allianceColor.withValues(alpha: 0.18),
@@ -127,7 +116,7 @@ class _IssueColumn extends StatelessWidget {
 // Connection order: ETH → DS → RADIO → PING
 
 class _TopBar extends StatelessWidget {
-  final AllianceStation station;
+  final StationStatus station;
   final double height;
 
   const _TopBar({required this.station, required this.height});
@@ -138,14 +127,13 @@ class _TopBar extends StatelessWidget {
     final textSize = (height * 0.22).clamp(6.0, 10.0);
     final vPad = (height * 0.10).clamp(1.0, 6.0);
 
-    final ds = station.dsConn;
-    final wifi = station.wifiStatus;
-    final radioLinked = wifi.radioLinked || (ds?.radioLinked ?? false);
-    final ping = ds?.dsRobotTripTimeMs;
+    final ds = station.dsLink;
+    final radioLinked = station.radioLink.linked || (ds?.radioLinked ?? false);
+    final ping = ds?.tripTimeMs;
 
     return Container(
       height: height,
-      color: const Color(0xFF111315),
+      color: surfaceBar,
       padding: EdgeInsets.symmetric(vertical: vPad, horizontal: 4),
       child: Row(
         children: [
@@ -196,10 +184,15 @@ class _TopBar extends StatelessWidget {
 // Robot order: RIO → BATT → CODE
 
 class _BottomBar extends StatelessWidget {
-  final AllianceStation station;
+  final StationStatus station;
   final double height;
+  final int matchState;
 
-  const _BottomBar({required this.station, required this.height});
+  const _BottomBar({
+    required this.station,
+    required this.height,
+    required this.matchState,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -207,14 +200,14 @@ class _BottomBar extends StatelessWidget {
     final textSize = (height * 0.22).clamp(6.0, 10.0);
     final vPad = (height * 0.10).clamp(1.0, 6.0);
 
-    final ds = station.dsConn;
+    final ds = station.dsLink;
     final batt = ds?.batteryVoltage;
     final rioLinked = ds?.rioLinked ?? false;
-    final codeLinked = ds?.robotLinked ?? false;
+    final codeRunning = ds?.codeRunning ?? false;
 
     return Container(
       height: height,
-      color: const Color(0xFF111315),
+      color: surfaceBar,
       padding: EdgeInsets.symmetric(vertical: vPad, horizontal: 4),
       child: Row(
         children: [
@@ -235,7 +228,7 @@ class _BottomBar extends StatelessWidget {
               value: (batt != null && batt > 0)
                   ? '${batt.toStringAsFixed(1)}v'
                   : '—v',
-              status: battConnStatus(station),
+              status: battConnStatus(station, matchState),
               iconSize: iconSize,
               textSize: textSize,
               showIcon: false,
@@ -244,7 +237,7 @@ class _BottomBar extends StatelessWidget {
           Expanded(
             child: _IconTile(
               icon: Icons.memory_rounded,
-              value: codeLinked ? 'CODE' : 'NO CODE',
+              value: codeRunning ? 'CODE' : 'NO CODE',
               status: codeConnStatus(station),
               iconSize: iconSize,
               textSize: textSize,
@@ -260,7 +253,7 @@ class _BottomBar extends StatelessWidget {
 
 class RobotStationCard extends StatelessWidget {
   final String stationKey;
-  final AllianceStation station;
+  final StationStatus station;
   final bool isRed;
   final int matchState;
 
@@ -274,21 +267,18 @@ class RobotStationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final state = computeStationState(station, matchState);
-    final baseAllianceColor = isRed
-        ? const Color(0xFFE24B4A)
-        : const Color(0xFF378ADD);
-    final allianceColor = switch (state.allianceMode) {
+    final stateDisp = computeStationState(station, matchState);
+    final baseAllianceColor = isRed ? arenaRed : arenaBlue;
+    final allianceColor = switch (stateDisp.allianceMode) {
       AllianceMode.active => baseAllianceColor,
-      AllianceMode.dim => const Color(0xFF4A5058),
-      AllianceMode.off => const Color(0xFF333840),
+      AllianceMode.dim => labelMuted,
+      AllianceMode.off => labelOff,
     };
     final centerBg = allianceColor.withValues(alpha: 0.12);
     final dividerColor = allianceColor.withValues(alpha: 0.22);
     final stationNum = stationKey.substring(1);
     final issueStatus = demoIssue(stationKey);
-    final team = station.team;
-    final hasAlert = state.severity != StationSeverity.none;
+    final hasAlert = stateDisp.severity != StationSeverity.none;
     const accentH = 8.0;
 
     return LayoutBuilder(
@@ -300,11 +290,11 @@ class RobotStationCard extends StatelessWidget {
 
         return Container(
           decoration: BoxDecoration(
-            color: const Color(0xFF0E1012),
+            color: surfaceCard,
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
               color: hasAlert
-                  ? state.color.withValues(alpha: 0.55)
+                  ? stateDisp.color.withValues(alpha: 0.55)
                   : allianceColor.withValues(alpha: 0.40),
               width: 1.0,
             ),
@@ -320,11 +310,16 @@ class RobotStationCard extends StatelessWidget {
                   child: LayoutBuilder(
                     builder: (context, cc) {
                       final h = cc.maxHeight;
-                      final teamFont = (h * 0.44).clamp(16.0, 52.0);
-                      final stateFont = (h * 0.27).clamp(11.0, 28.0);
-                      final statSubFont = (h * 0.16).clamp(8.0, 16.0);
-                      final stationFont = (h * 0.36).clamp(12.0, 28.0);
-                      final nickFont = (h * 0.10).clamp(7.0, 12.0);
+                      final w = cc.maxWidth;
+                      // Use the tighter dimension so fonts shrink on narrow
+                      // cards (portrait / small screens) as well as short ones.
+                      final sz = min(h, w);
+                      final teamFont = (sz * 0.40).clamp(14.0, 40.0);
+                      final stateFont = (sz * 0.40).clamp(14.0, 40.0);
+                      final statSubFont = (sz * 0.17).clamp(8.0, 16.0);
+                      // Station col is always 30 px wide — keep h-based but cap tightly.
+                      final stationFont = (h * 0.36).clamp(12.0, 22.0);
+                      final nickFont = (sz * 0.11).clamp(7.0, 12.0);
 
                       return Row(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -351,43 +346,57 @@ class RobotStationCard extends StatelessWidget {
 
                           // Team number
                           Expanded(
-                            flex: 5,
+                            flex: 1,
                             child: Container(
                               color: centerBg,
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
                                   if (hasAlert)
-                                    Container(height: accentH, color: state.color),
+                                    Container(
+                                      height: accentH,
+                                      color: stateDisp.color,
+                                    ),
                                   Expanded(
                                     child: Padding(
                                       padding: const EdgeInsets.symmetric(
-                                        horizontal: 6,
+                                        horizontal: 4,
                                       ),
                                       child: Column(
                                         mainAxisAlignment:
                                             MainAxisAlignment.center,
                                         children: [
-                                          Text(
-                                            team != null ? '${team.id}' : '—',
-                                            style: TextStyle(
-                                              fontSize: teamFont,
-                                              fontWeight: FontWeight.w900,
-                                              color: allianceColor.withValues(
-                                                alpha: 0.95,
+                                          FittedBox(
+                                            fit: BoxFit.scaleDown,
+                                            child: Text(
+                                              station.teamId != null
+                                                  ? '${station.teamId}'
+                                                  : '—',
+                                              style: TextStyle(
+                                                fontSize: teamFont,
+                                                fontWeight: FontWeight.w900,
+                                                color: allianceColor.withValues(
+                                                  alpha: 0.95,
+                                                ),
+                                                height: 1.0,
                                               ),
-                                              height: 1.0,
+                                              textAlign: TextAlign.center,
                                             ),
-                                            textAlign: TextAlign.center,
                                           ),
-                                          if (team != null) ...[
+                                          if (station.teamId != null) ...[
                                             SizedBox(
-                                              height: (h * 0.04).clamp(2.0, 6.0),
+                                              height: (sz * 0.04).clamp(
+                                                2.0,
+                                                6.0,
+                                              ),
                                             ),
                                             Text(
-                                              team.nickname.isNotEmpty
-                                                  ? team.nickname
-                                                  : team.name,
+                                              station
+                                                          .teamNickname
+                                                          ?.isNotEmpty ==
+                                                      true
+                                                  ? station.teamNickname!
+                                                  : (station.teamName ?? ''),
                                               style: TextStyle(
                                                 fontSize: nickFont,
                                                 color: allianceColor.withValues(
@@ -405,7 +414,10 @@ class RobotStationCard extends StatelessWidget {
                                     ),
                                   ),
                                   if (hasAlert)
-                                    Container(height: accentH, color: state.color),
+                                    Container(
+                                      height: accentH,
+                                      color: stateDisp.color,
+                                    ),
                                 ],
                               ),
                             ),
@@ -418,50 +430,68 @@ class RobotStationCard extends StatelessWidget {
 
                           // State label
                           Expanded(
-                            flex: 4,
+                            flex: 1,
                             child: Container(
                               color: centerBg,
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
                                   if (hasAlert)
-                                    Container(height: accentH, color: state.color),
+                                    Container(
+                                      height: accentH,
+                                      color: stateDisp.color,
+                                    ),
                                   Expanded(
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          state.label,
-                                          style: TextStyle(
-                                            fontSize: stateFont,
-                                            fontWeight: FontWeight.w900,
-                                            color: state.color,
-                                            letterSpacing: 1.5,
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 4,
+                                      ),
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          FittedBox(
+                                            fit: BoxFit.scaleDown,
+                                            child: Text(
+                                              stateDisp.label,
+                                              style: TextStyle(
+                                                fontSize: stateFont,
+                                                fontWeight: FontWeight.w900,
+                                                color: stateDisp.color,
+                                              ),
+                                              textAlign: TextAlign.center,
+                                            ),
                                           ),
-                                          textAlign: TextAlign.center,
-                                        ),
-                                        for (final s in state.subs) ...[
-                                          SizedBox(
-                                            height: (h * 0.02).clamp(1.0, 4.0),
-                                          ),
-                                          Text(
-                                            s,
-                                            style: TextStyle(
-                                              fontSize: statSubFont,
-                                              fontWeight: FontWeight.w700,
-                                              color: state.color.withValues(
-                                                alpha: 0.75,
+                                          for (final s in stateDisp.subs) ...[
+                                            SizedBox(
+                                              height: (sz * 0.02).clamp(
+                                                1.0,
+                                                4.0,
                                               ),
                                             ),
-                                            textAlign: TextAlign.center,
-                                          ),
+                                            FittedBox(
+                                              fit: BoxFit.scaleDown,
+                                              child: Text(
+                                                s,
+                                                style: TextStyle(
+                                                  fontSize: statSubFont,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: stateDisp.color
+                                                      .withValues(alpha: 0.75),
+                                                ),
+                                                textAlign: TextAlign.center,
+                                              ),
+                                            ),
+                                          ],
                                         ],
-                                      ],
+                                      ),
                                     ),
                                   ),
                                   if (hasAlert)
-                                    Container(height: accentH, color: state.color),
+                                    Container(
+                                      height: accentH,
+                                      color: stateDisp.color,
+                                    ),
                                 ],
                               ),
                             ),
@@ -484,7 +514,11 @@ class RobotStationCard extends StatelessWidget {
                   ),
                 ),
                 Divider(height: 1, thickness: 1, color: dividerColor),
-                _BottomBar(station: station, height: barH),
+                _BottomBar(
+                  station: station,
+                  height: barH,
+                  matchState: matchState,
+                ),
               ],
             ),
           ),

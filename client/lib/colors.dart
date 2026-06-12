@@ -1,5 +1,49 @@
 import 'package:flutter/material.dart';
 
+// ─── Field Monitor palette ────────────────────────────────────────────────────
+
+// Status indicator colors
+const arenaRed   = Color(0xFFE24B4A); // critical / E-stop / red alliance
+const arenaAmber = Color(0xFFEF9F27); // warning / A-stop / pause
+const arenaGreen = Color(0xFF1D9E75); // ok / connected / success
+const arenaBlue  = Color(0xFF378ADD); // info / blue alliance / auto
+const arenaGrey  = Color(0xFF888780); // unknown / bypass / disabled
+
+// Match phase colors
+const phasePreBlue    = Color(0xFF2870C2); // PRE phase
+const phasePauseAmber = Color(0xFFCF8F22); // PAUSE phase
+const phaseTeleopTeal = Color(0xFF1A8C64); // TELEOP / READY phase
+const phasePostGrey   = Color(0xFF3A4048); // POST phase
+const phaseDoneGrey   = Color(0xFF555E68); // DONE station state
+
+// Surface / background colors
+const surfaceCard   = Color(0xFF0E1012); // card / container background
+const surfaceBar    = Color(0xFF111315); // top/bottom bar background
+const surfaceIdle   = Color(0xFF181B1E); // idle / inactive background
+const surfaceBorder = Color(0xFF2A2E33); // border / divider
+
+// Text / label colors
+const labelMuted  = Color(0xFF4A5058); // section header labels
+const labelDim    = Color(0xFF6B7480); // secondary / muted text
+const labelFaint  = Color(0xFFCDD4DC); // very faint / inactive text
+const labelIdle   = Color(0xFF3E4348); // idle foreground
+const labelDimmer = Color(0xFF5A6068); // not-ready hero foreground
+const labelOff    = Color(0xFF333840); // off-alliance station text
+
+// Special state backgrounds
+const bgEStop       = Color(0xFFB03030); // E-stop footer / panel
+const bgSafe        = Color(0xFF1A7C58); // SAFE / fieldReset footer
+const bgArmed       = Color(0xFF100C00); // ARMED barber pole base
+const bgArmedStripe = Color(0xFFCC7000); // ARMED barber pole stripe
+
+// ConnPill text colors (darkened for readability on tinted pill background)
+const pillTextOk    = Color(0xFF0F6E56);
+const pillTextWarn  = Color(0xFF854F0B);
+const pillTextError = Color(0xFFA32D2D);
+const pillTextNone  = Color(0xFF5F5E5A);
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 const _supportErrorColor = Color(0xFFD92B2B);
 const _supportWarningColor = Color(0xFFD9822B);
 const _supportSuccessColor = Color(0xFF2BD92B);

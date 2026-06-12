@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:arena_link/colors.dart';
 
 // ─── Status enum ─────────────────────────────────────────────────────────────
 
@@ -6,24 +7,24 @@ enum ConnStatus { ok, degraded, error, none }
 
 extension ConnStatusStyle on ConnStatus {
   Color get dot => switch (this) {
-    ConnStatus.ok => const Color(0xFF1D9E75),
-    ConnStatus.degraded => const Color(0xFFEF9F27),
-    ConnStatus.error => const Color(0xFFE24B4A),
-    ConnStatus.none => const Color(0xFF888780),
+    ConnStatus.ok => arenaGreen,
+    ConnStatus.degraded => arenaAmber,
+    ConnStatus.error => arenaRed,
+    ConnStatus.none => arenaGrey,
   };
 
   Color get bg => switch (this) {
-    ConnStatus.ok => const Color(0x1F1D9E75),
-    ConnStatus.degraded => const Color(0x1FEF9F27),
-    ConnStatus.error => const Color(0x1AE24B4A),
-    ConnStatus.none => const Color(0x14888780),
+    ConnStatus.ok => arenaGreen.withValues(alpha: 0.122),
+    ConnStatus.degraded => arenaAmber.withValues(alpha: 0.122),
+    ConnStatus.error => arenaRed.withValues(alpha: 0.102),
+    ConnStatus.none => arenaGrey.withValues(alpha: 0.078),
   };
 
   Color get text => switch (this) {
-    ConnStatus.ok => const Color(0xFF0F6E56),
-    ConnStatus.degraded => const Color(0xFF854F0B),
-    ConnStatus.error => const Color(0xFFA32D2D),
-    ConnStatus.none => const Color(0xFF5F5E5A),
+    ConnStatus.ok => pillTextOk,
+    ConnStatus.degraded => pillTextWarn,
+    ConnStatus.error => pillTextError,
+    ConnStatus.none => pillTextNone,
   };
 }
 

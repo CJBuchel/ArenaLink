@@ -1,12 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:arena_link/models/arena_status.dart';
+import 'package:arena_link/colors.dart';
+import 'package:arena_link/models/arena_state.dart';
 import 'package:arena_link/views/field_monitor/widgets/conn_pill.dart';
 
 // ─── Battery voltage thresholds ───────────────────────────────────────────────
 
-const double battCriticalV = 10.9;
-const double battWarningV = 11.4;
-const double battOkV = 12.0;
+typedef BattThresholds = ({double warning, double critical});
+
+const BattThresholds battThresholdsIdle   = (warning: 11.8, critical: 11.4);
+const BattThresholds battThresholdsActive = (warning: 11.0, critical: 10.5);
+
+/// Returns the appropriate thresholds based on matchState.
+/// Auto (2) and Teleop (4) are enabled periods drawing real current.
+BattThresholds battThresholds(int matchState) =>
+    (matchState == MatchStateConst.autoPeriod ||
+            matchState == MatchStateConst.teleopPeriod)
+        ? battThresholdsActive
+        : battThresholdsIdle;
 
 // ─── Ping thresholds ──────────────────────────────────────────────────────────
 
@@ -29,9 +39,6 @@ IssueStatus demoIssue(String key) => switch (key) {
 enum StationSeverity { none, warning, critical }
 
 // ─── Alliance color mode ──────────────────────────────────────────────────────
-// active = full red/blue  (robot running/ready/batt issue)
-// dim    = muted grey     (estop/astop/connection problems)
-// off    = neutral grey   (bypassed)
 
 enum AllianceMode { active, dim, off }
 
@@ -47,23 +54,23 @@ typedef StateDisplay = ({
 
 // ─── State computation ────────────────────────────────────────────────────────
 
-List<String> _radioSubs(WifiStatus wifi, DriverStationConnection ds) {
+List<String> _radioSubs(RadioLink radio, DsLink ds) {
   final result = <String>[];
-  final ping = ds.dsRobotTripTimeMs;
-  if (ping > 0) result.add('${ping}ms');
-  if (wifi.signalNoiseRatio > 0)
-    result.add('SNR ${wifi.signalNoiseRatio.round()}dB');
-  if (wifi.connectionQuality > 0) result.add('Q${wifi.connectionQuality}%');
-  if (ds.missedPacketCount > 0) result.add('${ds.missedPacketCount} lost');
+  if (ds.tripTimeMs > 0) result.add('${ds.tripTimeMs}ms');
+  if (radio.signalNoiseRatio > 0) {
+    result.add('SNR ${radio.signalNoiseRatio.round()}dB');
+  }
+  if (radio.connectionQuality > 0) result.add('Q${radio.connectionQuality}%');
+  if (ds.missedPackets > 0) result.add('${ds.missedPackets} lost');
   return result;
 }
 
-StateDisplay computeStationState(AllianceStation station, int matchState) {
+StateDisplay computeStationState(StationStatus station, int matchState) {
   if (station.eStop) {
     return (
       label: 'E-STOP',
       subs: const [],
-      color: const Color(0xFFE24B4A),
+      color: arenaRed,
       severity: StationSeverity.critical,
       allianceMode: AllianceMode.dim,
     );
@@ -72,7 +79,7 @@ StateDisplay computeStationState(AllianceStation station, int matchState) {
     return (
       label: 'A-STOP',
       subs: const [],
-      color: const Color(0xFFEF9F27),
+      color: arenaAmber,
       severity: StationSeverity.critical,
       allianceMode: AllianceMode.dim,
     );
@@ -81,7 +88,7 @@ StateDisplay computeStationState(AllianceStation station, int matchState) {
     return (
       label: 'BYPASS',
       subs: const [],
-      color: const Color(0xFF888780),
+      color: arenaGrey,
       severity: StationSeverity.warning,
       allianceMode: AllianceMode.off,
     );
@@ -90,26 +97,26 @@ StateDisplay computeStationState(AllianceStation station, int matchState) {
     return (
       label: 'NO ETH',
       subs: const [],
-      color: const Color(0xFFE24B4A),
+      color: arenaRed,
       severity: StationSeverity.critical,
       allianceMode: AllianceMode.dim,
     );
   }
-  final ds = station.dsConn;
+  final ds = station.dsLink;
   if (ds == null || !ds.dsLinked) {
     return (
       label: 'DS',
       subs: const [],
-      color: const Color(0xFFE24B4A),
+      color: arenaRed,
       severity: StationSeverity.critical,
       allianceMode: AllianceMode.dim,
     );
   }
-  if (!station.wifiStatus.radioLinked && !ds.radioLinked) {
+  if (!station.radioLink.linked && !ds.radioLinked) {
     return (
       label: 'RADIO',
-      subs: _radioSubs(station.wifiStatus, ds),
-      color: const Color(0xFFEF9F27),
+      subs: _radioSubs(station.radioLink, ds),
+      color: arenaAmber,
       severity: StationSeverity.warning,
       allianceMode: AllianceMode.dim,
     );
@@ -118,72 +125,75 @@ StateDisplay computeStationState(AllianceStation station, int matchState) {
     return (
       label: 'RIO',
       subs: const [],
-      color: const Color(0xFFE24B4A),
+      color: arenaRed,
       severity: StationSeverity.critical,
       allianceMode: AllianceMode.dim,
     );
   }
-  if (!ds.robotLinked) {
+  if (!ds.codeRunning) {
     return (
       label: 'CODE',
       subs: const [],
-      color: const Color(0xFFEF9F27),
+      color: arenaAmber,
       severity: StationSeverity.warning,
       allianceMode: AllianceMode.dim,
     );
   }
   final batt = ds.batteryVoltage;
-  if (batt > 0 && batt < battCriticalV) {
+  final thresh = battThresholds(matchState);
+  if (batt > 0 && batt < thresh.critical) {
     return (
       label: 'BATT',
       subs: ['${batt.toStringAsFixed(1)}v'],
-      color: const Color(0xFFE24B4A),
+      color: arenaRed,
       severity: StationSeverity.critical,
       allianceMode: AllianceMode.active,
     );
   }
-  if (batt > 0 && batt < battWarningV) {
+  if (batt > 0 && batt < thresh.warning) {
     return (
       label: 'BATT',
       subs: ['${batt.toStringAsFixed(1)}v'],
-      color: const Color(0xFFEF9F27),
+      color: arenaAmber,
       severity: StationSeverity.warning,
       allianceMode: AllianceMode.active,
     );
   }
   return switch (matchState) {
-    3 => (
+    MatchStateConst.autoPeriod => (
       label: 'AUTO',
       subs: const [],
-      color: const Color(0xFF2870C2),
+      color: phasePreBlue,
       severity: StationSeverity.none,
       allianceMode: AllianceMode.active,
     ),
-    4 => (
+    MatchStateConst.pausePeriod => (
       label: 'PAUSE',
       subs: const [],
-      color: const Color(0xFFEF9F27),
+      color: arenaAmber,
       severity: StationSeverity.none,
       allianceMode: AllianceMode.active,
     ),
-    5 => (
+    MatchStateConst.teleopPeriod => (
       label: 'TELEOP',
       subs: const [],
-      color: const Color(0xFF1A8C64),
+      color: phaseTeleopTeal,
       severity: StationSeverity.none,
       allianceMode: AllianceMode.active,
     ),
-    6 || 7 => (
+    MatchStateConst.postMatch ||
+    MatchStateConst.timeoutActive ||
+    MatchStateConst.postTimeout => (
       label: 'DONE',
       subs: const [],
-      color: const Color(0xFF555E68),
+      color: phaseDoneGrey,
       severity: StationSeverity.none,
       allianceMode: AllianceMode.active,
     ),
     _ => (
       label: 'READY',
       subs: const [],
-      color: const Color(0xFF1A8C64),
+      color: phaseTeleopTeal,
       severity: StationSeverity.none,
       allianceMode: AllianceMode.active,
     ),
@@ -192,29 +202,30 @@ StateDisplay computeStationState(AllianceStation station, int matchState) {
 
 // ─── Connection status helpers ────────────────────────────────────────────────
 
-ConnStatus dsConnStatus(AllianceStation s) {
-  final ds = s.dsConn;
+ConnStatus dsConnStatus(StationStatus s) {
+  final ds = s.dsLink;
   if (ds == null) return ConnStatus.none;
   return ds.dsLinked ? ConnStatus.ok : ConnStatus.error;
 }
 
-ConnStatus radioConnStatus(AllianceStation s) {
-  if (s.wifiStatus.radioLinked) return ConnStatus.ok;
-  if (s.dsConn?.radioLinked == true) return ConnStatus.degraded;
+ConnStatus radioConnStatus(StationStatus s) {
+  if (s.radioLink.linked) return ConnStatus.ok;
+  if (s.dsLink?.radioLinked == true) return ConnStatus.degraded;
   return ConnStatus.none;
 }
 
-ConnStatus codeConnStatus(AllianceStation s) {
-  final ds = s.dsConn;
+ConnStatus codeConnStatus(StationStatus s) {
+  final ds = s.dsLink;
   if (ds == null || !ds.dsLinked) return ConnStatus.none;
-  return ds.robotLinked ? ConnStatus.ok : ConnStatus.error;
+  return ds.codeRunning ? ConnStatus.ok : ConnStatus.error;
 }
 
-ConnStatus battConnStatus(AllianceStation s) {
-  final v = s.dsConn?.batteryVoltage;
+ConnStatus battConnStatus(StationStatus s, int matchState) {
+  final v = s.dsLink?.batteryVoltage;
   if (v == null || v == 0) return ConnStatus.none;
-  if (v < battCriticalV) return ConnStatus.error;
-  if (v < battWarningV) return ConnStatus.degraded;
+  final thresh = battThresholds(matchState);
+  if (v < thresh.critical) return ConnStatus.error;
+  if (v < thresh.warning) return ConnStatus.degraded;
   return ConnStatus.ok;
 }
 
