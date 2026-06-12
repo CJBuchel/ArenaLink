@@ -1,0 +1,44 @@
+# ─── Rust ─────────────────────────────────────────────────────────────────────
+target/
+**/*.rs.bk
+*.pdb
+
+# ─── Flutter / Dart ───────────────────────────────────────────────────────────
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+build/
+coverage/
+**/doc/api/
+
+# ─── Editor / IDE ─────────────────────────────────────────────────────────────
+.idea/
+.vscode/settings.json
+*.iml
+*.ipr
+*.iws
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# ─── Logs ─────────────────────────────────────────────────────────────────────
+logs/
+*.log
+
+# ─── Environment / secrets ────────────────────────────────────────────────────
+.env
+server/.env
+# Keep the example so contributors know what's needed
+!server/.env.example
+
+# ─── Claude AI ────────────────────────────────────────────────────────────────
+.claude/
+
+# ─── OS ───────────────────────────────────────────────────────────────────────
+.DS_Store
+ehthumbs.db
+Desktop.ini
