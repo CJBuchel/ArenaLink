@@ -41,7 +41,7 @@ final class ArenaNotifierProvider
   }
 }
 
-String _$arenaNotifierHash() => r'754028b69c31faabea8e4fec8ae8269d2d87d85d';
+String _$arenaNotifierHash() => r'4823feeaaa642382d36d213c24c88b00dcff73cd';
 
 abstract class _$ArenaNotifier extends $Notifier<Arena> {
   Arena build();

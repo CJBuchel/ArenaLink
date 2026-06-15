@@ -15,7 +15,8 @@ import 'package:go_router/go_router.dart';
 /// - railIndex: The index in NavigationRail (null if not in rail)
 enum AppRoute {
   // Public routes
-  fieldMonitor(path: '/', name: 'field_monitor', railIndex: null),
+  teams(path: '/teams', name: 'teams', railIndex: 0),
+  fieldMonitor(path: '/', name: 'field_monitor', railIndex: 1),
   settings(path: '/settings', name: 'settings', railIndex: null);
 
   const AppRoute({

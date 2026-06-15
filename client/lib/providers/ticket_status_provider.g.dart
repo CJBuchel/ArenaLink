@@ -42,7 +42,7 @@ final class TicketStatusNotifierProvider
 }
 
 String _$ticketStatusNotifierHash() =>
-    r'eca0307ea5ec8c64f787b19b3713b0bb0b923109';
+    r'1c81a26fbf5799b6a0f1f74ef5124eaf6a388f74';
 
 abstract class _$TicketStatusNotifier extends $Notifier<void> {
   void build();

@@ -51,6 +51,7 @@ class TicketStatusNotifier extends _$TicketStatusNotifier {
     // Always wipe first so stale flags from the previous team assignment go away.
     ref.read(issueStatusProvider.notifier).clearAll();
     ref.read(openCountProvider.notifier).clearAll();
+    ref.read(teamStatusMapProvider.notifier).setAll(Map.unmodifiable(_cache));
 
     final stations = arena.field?.stations;
     if (stations == null || stations.isEmpty) return;
@@ -136,6 +137,9 @@ class TicketStatusNotifier extends _$TicketStatusNotifier {
     } else {
       _cache[teamId] = (issueStatus, count);
     }
+
+    // Sync team status map for the Teams view.
+    ref.read(teamStatusMapProvider.notifier).setAll(Map.unmodifiable(_cache));
 
     // Apply immediately if the arena mapping is already available.
     final stations = ref.read(arenaProvider).field?.stations;

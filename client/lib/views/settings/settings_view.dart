@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:arena_link/colors.dart';
-import 'package:arena_link/models/settings.dart';
 import 'package:arena_link/providers/settings_provider.dart';
 
 class SettingsView extends ConsumerStatefulWidget {
@@ -15,34 +14,28 @@ class SettingsView extends ConsumerStatefulWidget {
 class _SettingsViewState extends ConsumerState<SettingsView> {
   late final TextEditingController _hostCtrl;
   late final TextEditingController _portCtrl;
-  late final TextEditingController _tzCtrl;
 
   @override
   void initState() {
     super.initState();
     final s = ref.read(appSettingsProvider);
-    _hostCtrl = TextEditingController(text: s.arenaHost);
-    _portCtrl = TextEditingController(text: s.arenaPort.toString());
-    _tzCtrl = TextEditingController(
-      text: s.serverTimezoneOffsetHours.toString(),
-    );
+    _hostCtrl = TextEditingController(text: s.serverHost);
+    _portCtrl = TextEditingController(text: s.serverPort.toString());
   }
 
   @override
   void dispose() {
     _hostCtrl.dispose();
     _portCtrl.dispose();
-    _tzCtrl.dispose();
     super.dispose();
   }
 
   void _save() {
     final current = ref.read(appSettingsProvider);
     final host = _hostCtrl.text.trim();
-    final port = int.tryParse(_portCtrl.text.trim()) ?? current.arenaPort;
-    final tz = int.tryParse(_tzCtrl.text.trim()) ?? current.serverTimezoneOffsetHours;
+    final port = int.tryParse(_portCtrl.text.trim()) ?? current.serverPort;
     ref.read(appSettingsProvider.notifier).update(
-      current.copyWith(arenaHost: host, arenaPort: port, serverTimezoneOffsetHours: tz),
+      current.copyWith(serverHost: host, serverPort: port),
     );
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Settings saved')),
@@ -68,31 +61,17 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
           const SizedBox(height: 24),
           _Card(children: [
             _Field(
-              label: 'Arena Host',
+              label: 'ArenaLink Server Host',
               hint: 'localhost',
+              helperText: 'IP address or hostname of the ArenaLink server.',
               controller: _hostCtrl,
             ),
             _Field(
-              label: 'Arena Port',
-              hint: '8080',
+              label: 'ArenaLink Server Port',
+              hint: '9090',
               controller: _portCtrl,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               keyboardType: TextInputType.number,
-            ),
-          ]),
-          const SizedBox(height: 16),
-          _Card(children: [
-            _Field(
-              label: 'Server Timezone Offset (hours)',
-              hint: '0',
-              helperText:
-                  'UTC offset of the arena server. 0 = use this device\'s '
-                  'local timezone. Set to 8 for UTC+8, -5 for UTC-5, etc.',
-              controller: _tzCtrl,
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'^-?\d*')),
-              ],
-              keyboardType: const TextInputType.numberWithOptions(signed: true),
             ),
           ]),
           const SizedBox(height: 24),
@@ -179,8 +158,7 @@ class _Field extends StatelessWidget {
               borderRadius: BorderRadius.circular(6),
               borderSide: BorderSide(color: surfaceBorder, width: 0.5),
             ),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             helperText: helperText,
             helperMaxLines: 3,
             helperStyle: TextStyle(fontSize: 10, color: labelFaint),

@@ -22,6 +22,7 @@ dependencies:
   web_socket_channel: ^3.0.3
   logger: ^2.7.0
   http: ^1.4.0
+  fl_chart: ^0.70.0
 
 dev_dependencies:
   flutter_test:

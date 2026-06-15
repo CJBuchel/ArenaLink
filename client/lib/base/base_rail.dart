@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:arena_link/providers/ticket_status_provider.dart';
 import 'package:arena_link/router/app_routes.dart';
 
 class BaseRail extends HookConsumerWidget {
@@ -8,6 +9,11 @@ class BaseRail extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Keep the ticket status WebSocket alive regardless of which tab is active.
+    // Without this watch, the WS only starts when FieldMonitorView is open,
+    // so the Teams page would show stale/empty statuses.
+    ref.watch(ticketStatusProvider);
+
     // Derive selected index from current route instead of local state
     final selectedIndex = AppRoute.currentRailIndex(context);
     final isExtended = useState(false);
@@ -43,8 +49,12 @@ class BaseRail extends HookConsumerWidget {
             ),
             destinations: const [
               NavigationRailDestination(
-                icon: Icon(Icons.handyman),
+                icon: Icon(Icons.groups_rounded),
                 label: Text('Teams'),
+              ),
+              NavigationRailDestination(
+                icon: Icon(Icons.monitor_rounded),
+                label: Text('Field Monitor'),
               ),
             ],
           ),

@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$AppSettings {
 
- ArenaType get arenaType; String get arenaHost; int get arenaPort; int get serverTimezoneOffsetHours; String get serverHost; int get serverPort;
+ String get serverHost; int get serverPort;
 /// Create a copy of AppSettings
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $AppSettingsCopyWith<AppSettings> get copyWith => _$AppSettingsCopyWithImpl<AppS
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AppSettings&&(identical(other.arenaType, arenaType) || other.arenaType == arenaType)&&(identical(other.arenaHost, arenaHost) || other.arenaHost == arenaHost)&&(identical(other.arenaPort, arenaPort) || other.arenaPort == arenaPort)&&(identical(other.serverTimezoneOffsetHours, serverTimezoneOffsetHours) || other.serverTimezoneOffsetHours == serverTimezoneOffsetHours)&&(identical(other.serverHost, serverHost) || other.serverHost == serverHost)&&(identical(other.serverPort, serverPort) || other.serverPort == serverPort));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AppSettings&&(identical(other.serverHost, serverHost) || other.serverHost == serverHost)&&(identical(other.serverPort, serverPort) || other.serverPort == serverPort));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,arenaType,arenaHost,arenaPort,serverTimezoneOffsetHours,serverHost,serverPort);
+int get hashCode => Object.hash(runtimeType,serverHost,serverPort);
 
 @override
 String toString() {
-  return 'AppSettings(arenaType: $arenaType, arenaHost: $arenaHost, arenaPort: $arenaPort, serverTimezoneOffsetHours: $serverTimezoneOffsetHours, serverHost: $serverHost, serverPort: $serverPort)';
+  return 'AppSettings(serverHost: $serverHost, serverPort: $serverPort)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $AppSettingsCopyWith<$Res>  {
   factory $AppSettingsCopyWith(AppSettings value, $Res Function(AppSettings) _then) = _$AppSettingsCopyWithImpl;
 @useResult
 $Res call({
- ArenaType arenaType, String arenaHost, int arenaPort, int serverTimezoneOffsetHours, String serverHost, int serverPort
+ String serverHost, int serverPort
 });
 
 
@@ -65,13 +65,9 @@ class _$AppSettingsCopyWithImpl<$Res>
 
 /// Create a copy of AppSettings
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? arenaType = null,Object? arenaHost = null,Object? arenaPort = null,Object? serverTimezoneOffsetHours = null,Object? serverHost = null,Object? serverPort = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? serverHost = null,Object? serverPort = null,}) {
   return _then(_self.copyWith(
-arenaType: null == arenaType ? _self.arenaType : arenaType // ignore: cast_nullable_to_non_nullable
-as ArenaType,arenaHost: null == arenaHost ? _self.arenaHost : arenaHost // ignore: cast_nullable_to_non_nullable
-as String,arenaPort: null == arenaPort ? _self.arenaPort : arenaPort // ignore: cast_nullable_to_non_nullable
-as int,serverTimezoneOffsetHours: null == serverTimezoneOffsetHours ? _self.serverTimezoneOffsetHours : serverTimezoneOffsetHours // ignore: cast_nullable_to_non_nullable
-as int,serverHost: null == serverHost ? _self.serverHost : serverHost // ignore: cast_nullable_to_non_nullable
+serverHost: null == serverHost ? _self.serverHost : serverHost // ignore: cast_nullable_to_non_nullable
 as String,serverPort: null == serverPort ? _self.serverPort : serverPort // ignore: cast_nullable_to_non_nullable
 as int,
   ));
@@ -158,10 +154,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( ArenaType arenaType,  String arenaHost,  int arenaPort,  int serverTimezoneOffsetHours,  String serverHost,  int serverPort)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String serverHost,  int serverPort)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _AppSettings() when $default != null:
-return $default(_that.arenaType,_that.arenaHost,_that.arenaPort,_that.serverTimezoneOffsetHours,_that.serverHost,_that.serverPort);case _:
+return $default(_that.serverHost,_that.serverPort);case _:
   return orElse();
 
 }
@@ -179,10 +175,10 @@ return $default(_that.arenaType,_that.arenaHost,_that.arenaPort,_that.serverTime
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( ArenaType arenaType,  String arenaHost,  int arenaPort,  int serverTimezoneOffsetHours,  String serverHost,  int serverPort)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String serverHost,  int serverPort)  $default,) {final _that = this;
 switch (_that) {
 case _AppSettings():
-return $default(_that.arenaType,_that.arenaHost,_that.arenaPort,_that.serverTimezoneOffsetHours,_that.serverHost,_that.serverPort);case _:
+return $default(_that.serverHost,_that.serverPort);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -199,10 +195,10 @@ return $default(_that.arenaType,_that.arenaHost,_that.arenaPort,_that.serverTime
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( ArenaType arenaType,  String arenaHost,  int arenaPort,  int serverTimezoneOffsetHours,  String serverHost,  int serverPort)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String serverHost,  int serverPort)?  $default,) {final _that = this;
 switch (_that) {
 case _AppSettings() when $default != null:
-return $default(_that.arenaType,_that.arenaHost,_that.arenaPort,_that.serverTimezoneOffsetHours,_that.serverHost,_that.serverPort);case _:
+return $default(_that.serverHost,_that.serverPort);case _:
   return null;
 
 }
@@ -214,13 +210,9 @@ return $default(_that.arenaType,_that.arenaHost,_that.arenaPort,_that.serverTime
 @JsonSerializable()
 
 class _AppSettings implements AppSettings {
-  const _AppSettings({this.arenaType = ArenaType.cheesy, this.arenaHost = 'localhost', this.arenaPort = 8080, this.serverTimezoneOffsetHours = 0, this.serverHost = 'localhost', this.serverPort = 9090});
+  const _AppSettings({this.serverHost = 'localhost', this.serverPort = 9090});
   factory _AppSettings.fromJson(Map<String, dynamic> json) => _$AppSettingsFromJson(json);
 
-@override@JsonKey() final  ArenaType arenaType;
-@override@JsonKey() final  String arenaHost;
-@override@JsonKey() final  int arenaPort;
-@override@JsonKey() final  int serverTimezoneOffsetHours;
 @override@JsonKey() final  String serverHost;
 @override@JsonKey() final  int serverPort;
 
@@ -237,16 +229,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AppSettings&&(identical(other.arenaType, arenaType) || other.arenaType == arenaType)&&(identical(other.arenaHost, arenaHost) || other.arenaHost == arenaHost)&&(identical(other.arenaPort, arenaPort) || other.arenaPort == arenaPort)&&(identical(other.serverTimezoneOffsetHours, serverTimezoneOffsetHours) || other.serverTimezoneOffsetHours == serverTimezoneOffsetHours)&&(identical(other.serverHost, serverHost) || other.serverHost == serverHost)&&(identical(other.serverPort, serverPort) || other.serverPort == serverPort));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AppSettings&&(identical(other.serverHost, serverHost) || other.serverHost == serverHost)&&(identical(other.serverPort, serverPort) || other.serverPort == serverPort));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,arenaType,arenaHost,arenaPort,serverTimezoneOffsetHours,serverHost,serverPort);
+int get hashCode => Object.hash(runtimeType,serverHost,serverPort);
 
 @override
 String toString() {
-  return 'AppSettings(arenaType: $arenaType, arenaHost: $arenaHost, arenaPort: $arenaPort, serverTimezoneOffsetHours: $serverTimezoneOffsetHours, serverHost: $serverHost, serverPort: $serverPort)';
+  return 'AppSettings(serverHost: $serverHost, serverPort: $serverPort)';
 }
 
 
@@ -257,7 +249,7 @@ abstract mixin class _$AppSettingsCopyWith<$Res> implements $AppSettingsCopyWith
   factory _$AppSettingsCopyWith(_AppSettings value, $Res Function(_AppSettings) _then) = __$AppSettingsCopyWithImpl;
 @override @useResult
 $Res call({
- ArenaType arenaType, String arenaHost, int arenaPort, int serverTimezoneOffsetHours, String serverHost, int serverPort
+ String serverHost, int serverPort
 });
 
 
@@ -274,13 +266,9 @@ class __$AppSettingsCopyWithImpl<$Res>
 
 /// Create a copy of AppSettings
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? arenaType = null,Object? arenaHost = null,Object? arenaPort = null,Object? serverTimezoneOffsetHours = null,Object? serverHost = null,Object? serverPort = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? serverHost = null,Object? serverPort = null,}) {
   return _then(_AppSettings(
-arenaType: null == arenaType ? _self.arenaType : arenaType // ignore: cast_nullable_to_non_nullable
-as ArenaType,arenaHost: null == arenaHost ? _self.arenaHost : arenaHost // ignore: cast_nullable_to_non_nullable
-as String,arenaPort: null == arenaPort ? _self.arenaPort : arenaPort // ignore: cast_nullable_to_non_nullable
-as int,serverTimezoneOffsetHours: null == serverTimezoneOffsetHours ? _self.serverTimezoneOffsetHours : serverTimezoneOffsetHours // ignore: cast_nullable_to_non_nullable
-as int,serverHost: null == serverHost ? _self.serverHost : serverHost // ignore: cast_nullable_to_non_nullable
+serverHost: null == serverHost ? _self.serverHost : serverHost // ignore: cast_nullable_to_non_nullable
 as String,serverPort: null == serverPort ? _self.serverPort : serverPort // ignore: cast_nullable_to_non_nullable
 as int,
   ));

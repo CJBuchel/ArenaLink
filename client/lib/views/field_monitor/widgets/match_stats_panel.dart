@@ -2,12 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:arena_link/colors.dart';
 import 'package:arena_link/models/arena_state.dart';
-import 'package:arena_link/providers/settings_provider.dart';
-
-class MatchStatsPanel extends HookConsumerWidget {
+class MatchStatsPanel extends HookWidget {
   final FieldMonitorState field;
 
   const MatchStatsPanel({super.key, required this.field});
@@ -37,18 +34,10 @@ class MatchStatsPanel extends HookConsumerWidget {
 
   // ── Schedule helpers ──────────────────────────────────────────────────────
 
-  /// Format a DateTime as a 12-hour clock string, e.g. "9:36 PM".
-  ///
-  /// [offsetHours] is the UTC offset of the arena server (from AppSettings).
-  /// 0 means "use device local timezone" via toLocal(), which is correct when
-  /// the device is in the same timezone as the event.  A non-zero value shifts
-  /// the stored UTC time into the server's wall-clock time for display.
-  static String _fmtScheduledTime(DateTime? dt, int offsetHours) {
+  /// Format a DateTime as a 12-hour clock string using device local timezone.
+  static String _fmtScheduledTime(DateTime? dt) {
     if (dt == null || dt.year < 2000) return '—';
-    final eff = offsetHours != 0
-        ? offsetHours
-        : DateTime.now().timeZoneOffset.inHours;
-    final displayed = dt.toUtc().add(Duration(hours: eff));
+    final displayed = dt.toLocal();
     final h = displayed.hour % 12 == 0 ? 12 : displayed.hour % 12;
     final m = displayed.minute.toString().padLeft(2, '0');
     final amPm = displayed.hour < 12 ? 'AM' : 'PM';
@@ -102,9 +91,7 @@ class MatchStatsPanel extends HookConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final offsetHours = ref.watch(appSettingsProvider).serverTimezoneOffsetHours;
-
+  Widget build(BuildContext context) {
     final now = useState(DateTime.now());
     useEffect(() {
       final timer = Timer.periodic(const Duration(seconds: 1), (_) {
@@ -118,7 +105,7 @@ class MatchStatsPanel extends HookConsumerWidget {
     final phaseClr = _phaseColor(ms);
 
     final scheduled = field.scheduledStart;
-    final schedStr = _fmtScheduledTime(scheduled, offsetHours);
+    final schedStr = _fmtScheduledTime(scheduled);
     final delta = _computeDelta(scheduled, now.value);
     final cycle = _parseCycle(
       field.cycleTime.isNotEmpty ? field.cycleTime : null,

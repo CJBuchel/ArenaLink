@@ -8,9 +8,12 @@ use serenity::model::gateway::Ready;
 use serenity::model::id::{ChannelId, MessageId, UserId};
 use serenity::prelude::*;
 
+use database::AlertRepository;
+
 use crate::{config::DiscordConfig, core::shutdown::ShutdownNotifier};
 
 use super::{
+  from_db_record, to_db_record,
   messages::{build_interaction_update, parse_component_id},
   types::{
     AlertRegistry, IssueStatus, MatchContext, PitAlert, PitAlertType,
@@ -92,12 +95,12 @@ impl EventHandler for Handler {
     };
 
     let actor = component.user.name.clone();
+    let msg_id = component.message.id;
 
     let updated_alert = {
       let mut state = registry.lock().await;
-      let msg_id = component.message.id;
 
-      let updated = state.update_status(msg_id, new_status, Some(actor));
+      let updated = state.update_status(msg_id, new_status, Some(actor.clone()));
 
       // Broadcast new team status after mutation.
       if let Some(ref alert) = updated {
@@ -114,15 +117,30 @@ impl EventHandler for Handler {
         }
       }
 
-      if updated.is_none() {
-        log::warn!(
-          "[ArenaLink Bot] No alert found for message {} — bot may have restarted",
-          msg_id
-        );
-      }
-
       updated
     };
+
+    // Persist status change to database.
+    if updated_alert.is_some() {
+      if let Err(e) = AlertRepository::update_status(
+        msg_id.get(),
+        &format!("{new_status:?}"),
+        Some(&actor),
+      ) {
+        log::warn!("[Bot] Failed to update alert {msg_id} in database: {e}");
+      }
+    } else {
+      log::warn!("[Bot] No in-memory alert for message {msg_id} — attempting DB recovery");
+      // Alert missing from memory (e.g. brief restart). Try to patch DB status
+      // directly so at least the persistent record is correct.
+      if let Err(e) = AlertRepository::update_status(
+        msg_id.get(),
+        &format!("{new_status:?}"),
+        Some(&actor),
+      ) {
+        log::warn!("[Bot] DB update also failed for message {msg_id}: {e}");
+      }
+    }
 
     match updated_alert {
       Some(alert) => {
@@ -153,11 +171,15 @@ impl EventHandler for Handler {
   }
 }
 
-// ─── Discord history recovery ─────────────────────────────────────────────────
+// ─── Alert state recovery ─────────────────────────────────────────────────────
 //
-// On bot `ready`, fetch messages the bot previously sent in the alerts channel
-// and rebuild the in-memory AlertState so flags survive server restarts.
-// Only the most recent 500 bot messages are scanned (enough for a full event).
+// On bot `ready`, rebuild the in-memory AlertState so button interactions work
+// immediately after a restart.
+//
+// Strategy:
+//   1. Try the database first — fast, complete, preserves all fields.
+//   2. If the database is empty (first run or cleared), fall back to scanning
+//      Discord channel history and import what we find into the database.
 
 async fn recover_alert_state(
   ctx: &Context,
@@ -166,7 +188,26 @@ async fn recover_alert_state(
   registry: &AlertRegistry,
   status_tx: Option<&StatusBroadcast>,
 ) {
-  log::info!("[Bot] Recovering alert state from Discord channel history…");
+  // ── 1. Database recovery ────────────────────────────────────────────────────
+  match AlertRepository::get_all() {
+    Ok(records) if !records.is_empty() => {
+      let count = records.len();
+      let mut state = registry.lock().await;
+      for (key, record) in records {
+        if let Ok(msg_id_u64) = key.parse::<u64>() {
+          state.insert(MessageId::new(msg_id_u64), from_db_record(record));
+        }
+      }
+      drop(state);
+      log::info!("[Bot] Loaded {count} alerts from database");
+      broadcast_statuses(registry, status_tx).await;
+      return;
+    }
+    Ok(_) => log::info!("[Bot] Database empty — scanning Discord channel history…"),
+    Err(e) => log::warn!("[Bot] Database load failed ({e}) — scanning Discord channel history…"),
+  }
+
+  // ── 2. Discord channel scan fallback (imports into DB for next restart) ─────
   let mut total = 0u32;
   let mut before: Option<MessageId> = None;
 
@@ -195,8 +236,17 @@ async fn recover_alert_state(
       let embed = &msg.embeds[0];
       let Some(ref title) = embed.title else { continue };
 
-      let Some((team_id, station)) = parse_alert_title(title) else { continue };
-      let status  = status_from_components(&msg.components);
+      let Some(team_id) = parse_team_id_from_title(title) else { continue };
+
+      // Station: prefer dedicated field (new format), fall back to title brackets (old format).
+      let station = embed.fields.iter()
+        .find(|f| f.name == "Station")
+        .map(|f| f.value.clone())
+        .or_else(|| parse_station_from_title(title))
+        .unwrap_or_default();
+      if station.is_empty() { continue; }
+
+      let status = status_from_components(&msg.components);
       let alert_type = embed.fields.iter()
         .find(|f| f.name == "Issue")
         .and_then(|f| alert_type_from_field(&f.value))
@@ -217,6 +267,7 @@ async fn recover_alert_state(
         .find(|f| f.name.contains("Match Context"))
         .map(|f| parse_match_context_field(&f.value))
         .unwrap_or_default();
+      let pit_map_url = embed.url.clone();
 
       let alert = PitAlert {
         team_id: Some(team_id as i32),
@@ -236,7 +287,13 @@ async fn recover_alert_state(
         field_notes,
         status,
         action_by: None,
+        pit_map_url,
       };
+
+      // Import into database so future restarts don't need the channel scan.
+      if let Err(e) = AlertRepository::save(msg.id.get(), &to_db_record(&alert)) {
+        log::warn!("[Bot] Failed to import alert {} into database: {e}", msg.id);
+      }
 
       let mut state = registry.lock().await;
       state.insert(msg.id, alert);
@@ -247,9 +304,12 @@ async fn recover_alert_state(
     if fetched < 100 || total >= 500 { break; }
   }
 
-  log::info!("[Bot] Recovery complete — {total} alerts restored");
+  log::info!("[Bot] Discord scan complete — {total} alerts imported");
+  broadcast_statuses(registry, status_tx).await;
+}
 
-  // Push current statuses to any already-connected WebSocket clients.
+/// Push current team statuses to any already-connected WebSocket clients.
+async fn broadcast_statuses(registry: &AlertRegistry, status_tx: Option<&StatusBroadcast>) {
   if let Some(tx) = status_tx {
     let state = registry.lock().await;
     for team_id in state.all_team_ids() {
@@ -261,22 +321,26 @@ async fn recover_alert_state(
   }
 }
 
-/// Extract `(team_id, station)` from an embed title.
-/// Expected format: `"X Pit Alert — Team 1234 — Name [R2]"`
-fn parse_alert_title(title: &str) -> Option<(u32, String)> {
-  let bracket_open  = title.rfind('[')? + 1;
-  let bracket_close = title.rfind(']')?;
-  if bracket_close <= bracket_open { return None; }
-  let station = title[bracket_open..bracket_close].trim().to_string();
-
+/// Extract the team ID from an embed title.
+/// Handles both formats:
+///   - New: `"Team 3100"`
+///   - Old: `"🚨 Pit Alert — Team 3100 — Name [Red 1]"`
+fn parse_team_id_from_title(title: &str) -> Option<u32> {
   let team_pos = title.find("Team ")? + 5;
   let rest = &title[team_pos..];
   let id_end = rest.find(|c: char| !c.is_ascii_digit()).unwrap_or(rest.len());
   if id_end == 0 { return None; }
-  let team_id: u32 = rest[..id_end].parse().ok()?;
+  rest[..id_end].parse().ok()
+}
 
-  if station.is_empty() { return None; }
-  Some((team_id, station))
+/// Extract the station from the OLD title format: `"… [Red 1]"`.
+/// Returns None for new-format titles (station is in a field instead).
+fn parse_station_from_title(title: &str) -> Option<String> {
+  let open  = title.rfind('[')? + 1;
+  let close = title.rfind(']')?;
+  if close <= open { return None; }
+  let station = title[open..close].trim().to_string();
+  if station.is_empty() { None } else { Some(station) }
 }
 
 /// Determine `IssueStatus` from the Discord button set on a recovered message.

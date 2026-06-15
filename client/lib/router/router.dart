@@ -11,6 +11,8 @@ import 'package:arena_link/views/field_monitor/field_monitor_view.dart'
     deferred as fieldMonitor;
 import 'package:arena_link/views/settings/settings_view.dart'
     deferred as settingsView;
+import 'package:arena_link/views/teams/teams_view.dart'
+    deferred as teamsView;
 
 part 'router.g.dart';
 
@@ -95,6 +97,18 @@ GoRouter router(Ref ref) {
           );
         },
         routes: [
+          GoRoute(
+            name: AppRoute.teams.name,
+            path: AppRoute.teams.path,
+            pageBuilder: (context, state) => _buildTransitionPage(
+              key: state.pageKey,
+              child: DeferredWidget(
+                libraryKey: AppRoute.teams.path,
+                libraryLoader: teamsView.loadLibrary,
+                builder: (context) => teamsView.TeamsView(),
+              ),
+            ),
+          ),
           GoRoute(
             name: AppRoute.fieldMonitor.name,
             path: AppRoute.fieldMonitor.path,

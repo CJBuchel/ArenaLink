@@ -2,10 +2,13 @@ use std::time::Duration;
 
 use serenity::{http::Http, model::id::ChannelId};
 
+use database::AlertRepository;
+
 use crate::{config::DiscordConfig, core::scheduler::ScheduledService};
 
 use super::{
   messages::build_initial_message,
+  to_db_record,
   types::{AlertRegistry, PitAlert, StatusBroadcast, TeamStatusUpdate},
 };
 
@@ -68,6 +71,11 @@ pub async fn post_pit_alert(
     alert.station,
     sent.id
   );
+
+  // Persist to database so alerts survive bot restarts.
+  if let Err(e) = AlertRepository::save(sent.id.get(), &to_db_record(&alert)) {
+    log::warn!("[Discord] Failed to persist alert to database: {e}");
+  }
 
   let team_id = alert.team_id;
   let mut state = registry.lock().await;

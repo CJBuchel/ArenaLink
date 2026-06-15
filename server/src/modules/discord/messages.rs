@@ -65,31 +65,51 @@ pub fn parse_component_id(id: &str) -> Option<(&str, &str)> {
 
 /// Construct the rich embed for a pit alert.
 /// Called for both initial posts and status-update edits.
+///
+/// Resolved alerts render in a compact grey form — the full embed is
+/// restored automatically if the alert is reopened (all data is still
+/// on the PitAlert struct).
 pub fn build_embed(alert: &PitAlert) -> CreateEmbed {
-  let team_str = match (alert.team_id, &alert.team_name) {
-    (Some(id), Some(name)) => format!("Team {id} — {name}"),
-    (Some(id), None) => format!("Team {id}"),
-    _ => "Unknown Team".to_string(),
-  };
-
-  let title_full = format!(
-    "{} Pit Alert — {} [{}]",
-    alert.status.emoji(),
-    team_str,
-    alert.station,
-  );
-  // Discord embed title limit is 256 characters.
-  let title = if title_full.chars().count() > 256 {
-    let truncated: String = title_full.chars().take(254).collect();
-    format!("{truncated}…")
-  } else {
-    title_full
+  // ── Title: team number is always the most prominent element ───────────────
+  let title = match alert.team_id {
+    Some(id) => format!("Team {id}"),
+    None => "Unknown Team".to_string(),
   };
 
   let mut embed = CreateEmbed::new()
     .title(title)
-    .color(alert.status.color())
-    // ── Issue summary ──────────────────────────────────────────────────────
+    .color(alert.status.color());
+
+  // Team name as description (sits directly under the title).
+  if let Some(name) = &alert.team_name {
+    embed = embed.description(name);
+  }
+
+  // Link the embed title to the Nexus pit map if configured.
+  if let Some(url) = &alert.pit_map_url {
+    embed = embed.url(url);
+  }
+
+  // ── Resolved: compact view ─────────────────────────────────────────────────
+  // Grey, three inline fields — enough to scan "was this fixed?"
+  if alert.status == IssueStatus::Resolved {
+    let resolved_by = match &alert.action_by {
+      Some(user) => format!("by **{user}**"),
+      None => "—".to_string(),
+    };
+    return embed
+      .field(
+        "Issue",
+        format!("{} {}", alert.alert_type.emoji(), alert.alert_type.label()),
+        true,
+      )
+      .field("Station", &alert.station, true)
+      .field("Resolved", resolved_by, true)
+      .footer(CreateEmbedFooter::new("ArenaLink Pit Alerts"));
+  }
+
+  // ── Active alert: full view ────────────────────────────────────────────────
+  let mut embed = embed
     .field(
       "Issue",
       format!(
@@ -181,7 +201,7 @@ pub fn build_embed(alert: &PitAlert) -> CreateEmbed {
 pub fn build_action_row(alert: &PitAlert) -> CreateActionRow {
   let s = &alert.station;
 
-  let buttons: Vec<CreateButton> = match alert.status {
+  let mut buttons: Vec<CreateButton> = match alert.status {
     IssueStatus::Flagged => vec![
       CreateButton::new(wip_id(s))
         .label("Working on it")
@@ -210,23 +230,43 @@ pub fn build_action_row(alert: &PitAlert) -> CreateActionRow {
     ],
   };
 
+  if let Some(url) = &alert.pit_map_url {
+    buttons.push(
+      CreateButton::new_link(url)
+        .label("Pit Map")
+        .emoji(ReactionType::Unicode("🗺️".to_string())),
+    );
+  }
+
   CreateActionRow::Buttons(buttons)
 }
 
 // ─── Message constructors ─────────────────────────────────────────────────────
 
+/// Build the message `content` line (shown above the embed).
+///
+/// - Flagged / InProgress: role pings + "Pit Request" so people get notified.
+/// - Resolved: "Team {id} — (Resolved)" with no pings — the card is effectively
+///   just an archive entry at that point.
+fn build_content(alert: &PitAlert) -> String {
+  if alert.status == IssueStatus::Resolved {
+    match alert.team_id {
+      Some(id) => format!("Team {id} — (Resolved)"),
+      None     => "(Resolved)".to_string(),
+    }
+  } else if alert.mention_text.is_empty() {
+    String::new()
+  } else {
+    format!("{} — Pit Request", alert.mention_text)
+  }
+}
+
 /// Build the initial Discord message for a new pit alert.
 /// The `content` field carries role pings so they actually notify people
 /// (pings inside embeds don't trigger notifications).
 pub fn build_initial_message(alert: &PitAlert) -> CreateMessage {
-  let content = if alert.mention_text.is_empty() {
-    String::new()
-  } else {
-    format!("{} — new pit alert filed", alert.mention_text)
-  };
-
   CreateMessage::new()
-    .content(content)
+    .content(build_content(alert))
     .embed(build_embed(alert))
     .components(vec![build_action_row(alert)])
 }
@@ -236,6 +276,7 @@ pub fn build_initial_message(alert: &PitAlert) -> CreateMessage {
 #[allow(dead_code)]
 pub fn build_update_edit(alert: &PitAlert) -> EditMessage {
   EditMessage::new()
+    .content(build_content(alert))
     .embed(build_embed(alert))
     .components(vec![build_action_row(alert)])
 }
@@ -245,6 +286,7 @@ pub fn build_update_edit(alert: &PitAlert) -> EditMessage {
 /// an extra round-trip.
 pub fn build_interaction_update(alert: &PitAlert) -> CreateInteractionResponseMessage {
   CreateInteractionResponseMessage::new()
+    .content(build_content(alert))
     .embed(build_embed(alert))
     .components(vec![build_action_row(alert)])
 }

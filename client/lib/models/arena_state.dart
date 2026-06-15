@@ -416,11 +416,15 @@ class MatchRecord {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 class Arena {
-  /// Primary backend connection status.
+  /// Flutter ↔ ArenaLink server WebSocket connection status.
   final BackendConnectionStatus connection;
 
+  /// Whether the ArenaLink SERVER is connected to the FMS.
+  /// Distinguishes "can't reach ArenaLink server" from "FMS not running/connected".
+  final bool fmsConnected;
+
   /// Live field state for the field monitor view.
-  /// null = no data received yet (waiting for first backend message).
+  /// null = no data received yet (waiting for first FMS message).
   final FieldMonitorState? field;
 
   /// All teams at this event.
@@ -431,6 +435,7 @@ class Arena {
 
   const Arena({
     this.connection = BackendConnectionStatus.disconnected,
+    this.fmsConnected = false,
     this.field,
     this.teams = const [],
     this.matchLog = const [],
@@ -438,14 +443,16 @@ class Arena {
 
   Arena copyWith({
     BackendConnectionStatus? connection,
+    bool? fmsConnected,
     Object? field = _sentinel,
     List<EventTeam>? teams,
     List<MatchRecord>? matchLog,
   }) {
     return Arena(
-      connection: connection ?? this.connection,
+      connection:   connection   ?? this.connection,
+      fmsConnected: fmsConnected ?? this.fmsConnected,
       field: field == _sentinel ? this.field : field as FieldMonitorState?,
-      teams: teams ?? this.teams,
+      teams:    teams    ?? this.teams,
       matchLog: matchLog ?? this.matchLog,
     );
   }

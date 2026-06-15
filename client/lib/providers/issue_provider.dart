@@ -59,6 +59,23 @@ final openCountProvider =
   OpenCountNotifier.new,
 );
 
+// ─── Team status map ──────────────────────────────────────────────────────────
+// Mirrors TicketStatusNotifier._cache so the Teams view can reactively show
+// per-team ticket badges without going through station-key indirection.
+// Key: team_id, Value: (IssueStatus, open_count)
+
+class TeamStatusMapNotifier extends Notifier<Map<int, (IssueStatus, int)>> {
+  @override
+  Map<int, (IssueStatus, int)> build() => const {};
+
+  void setAll(Map<int, (IssueStatus, int)> map) => state = map;
+}
+
+final teamStatusMapProvider =
+    NotifierProvider<TeamStatusMapNotifier, Map<int, (IssueStatus, int)>>(
+  TeamStatusMapNotifier.new,
+);
+
 // ─── Convenience extensions ───────────────────────────────────────────────────
 
 extension IssueStatusWidgetRef on WidgetRef {

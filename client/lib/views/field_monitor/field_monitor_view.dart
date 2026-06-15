@@ -18,7 +18,10 @@ class FieldMonitorView extends HookConsumerWidget {
     final arena = ref.watch(arenaProvider);
 
     if (arena.field == null) {
-      return _ConnectionOverlay(status: arena.connection);
+      return _ConnectionOverlay(
+        status:       arena.connection,
+        fmsConnected: arena.fmsConnected,
+      );
     }
 
     final field = arena.field!;
@@ -68,15 +71,26 @@ class FieldMonitorView extends HookConsumerWidget {
 
 class _ConnectionOverlay extends StatelessWidget {
   final BackendConnectionStatus status;
+  final bool fmsConnected;
 
-  const _ConnectionOverlay({required this.status});
+  const _ConnectionOverlay({
+    required this.status,
+    required this.fmsConnected,
+  });
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final spinning =
-        status == BackendConnectionStatus.connecting ||
+    final serverConnected = status == BackendConnectionStatus.connected;
+    final spinning = status == BackendConnectionStatus.connecting ||
         status == BackendConnectionStatus.reconnecting;
+
+    final (IconData icon, String label, String? sub) = switch (true) {
+      _ when spinning           => (Icons.sync_rounded, _spinLabel(status), null),
+      _ when !serverConnected   => (Icons.cloud_off_outlined, 'Not connected to ArenaLink server', null),
+      _ when !fmsConnected      => (Icons.cable_rounded, 'FMS not connected', 'ArenaLink server is running but not connected to the FMS.'),
+      _                         => (Icons.hourglass_top_rounded, 'Waiting for data…', 'Connected to FMS — waiting for a match to load.'),
+    };
 
     return Center(
       child: Column(
@@ -85,20 +99,25 @@ class _ConnectionOverlay extends StatelessWidget {
           if (spinning)
             CircularProgressIndicator(color: cs.primary)
           else
-            Icon(
-              Icons.cloud_off_outlined,
-              size: 40,
-              color: cs.onSurfaceVariant,
-            ),
+            Icon(icon, size: 40, color: cs.onSurfaceVariant),
           const SizedBox(height: 12),
-          Text(switch (status) {
-            BackendConnectionStatus.connected => 'Waiting for data…',
-            BackendConnectionStatus.connecting => 'Connecting…',
-            BackendConnectionStatus.reconnecting => 'Reconnecting…',
-            BackendConnectionStatus.disconnected => 'Disconnected',
-          }, style: Theme.of(context).textTheme.bodyMedium),
+          Text(label, style: Theme.of(context).textTheme.bodyMedium),
+          if (sub != null) ...[
+            const SizedBox(height: 4),
+            Text(sub,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: cs.onSurfaceVariant,
+                ),
+                textAlign: TextAlign.center),
+          ],
         ],
       ),
     );
   }
+
+  static String _spinLabel(BackendConnectionStatus s) => switch (s) {
+    BackendConnectionStatus.connecting   => 'Connecting to ArenaLink server…',
+    BackendConnectionStatus.reconnecting => 'Reconnecting to ArenaLink server…',
+    _                                    => 'Connecting…',
+  };
 }

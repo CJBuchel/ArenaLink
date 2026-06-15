@@ -206,7 +206,7 @@ impl IssueStatus {
     match self {
       IssueStatus::Flagged    => 0xEF9F27, // amber
       IssueStatus::InProgress => 0x378ADD, // blue
-      IssueStatus::Resolved   => 0x1D9E75, // green
+      IssueStatus::Resolved   => 0x6B7280, // grey
     }
   }
 }
@@ -239,6 +239,8 @@ pub struct PitAlert {
   pub status: IssueStatus,
   /// Discord username of the person who last changed the status (WIP / Resolved).
   pub action_by: Option<String>,
+  /// Nexus pit map URL for this team, if NEXUS_EVENT_ID is configured.
+  pub pit_map_url: Option<String>,
 }
 
 // ─── Team ticket status ───────────────────────────────────────────────────────

@@ -31,6 +31,22 @@ pub struct ServerConfig {
   /// TCP port for the HTTP API server.
   #[arg(short, long, default_value = "9090", env = "SERVER_PORT")]
   pub port: u16,
+
+  /// Path to the sled database directory (created automatically if absent).
+  #[arg(long, default_value = "arenalink.db", env = "DB_PATH")]
+  pub db_path: String,
+
+  /// FMS type to connect to. Currently only "cheesy" is supported.
+  #[arg(long, default_value = "cheesy", env = "FMS_TYPE")]
+  pub fms_type: String,
+
+  /// Hostname of the FMS instance (Cheesy Arena, etc.).
+  #[arg(long, default_value = "localhost", env = "FMS_HOST")]
+  pub fms_host: String,
+
+  /// HTTP/WebSocket port of the FMS instance.
+  #[arg(long, default_value = "8080", env = "FMS_PORT")]
+  pub fms_port: u16,
 }
 
 /// Try to load a dotenv-format file at `path` into the environment.
@@ -90,8 +106,10 @@ impl ServerConfig {
     };
 
     // ── Step 2: load config file into the environment (non-overriding) ───────
-    let loaded = load_config_file(&config_path);
-    if !loaded {
+    // `any_loaded` stays false only when nothing was found anywhere — that's
+    // the signal to generate the file after the full parse.
+    let primary_loaded = load_config_file(&config_path);
+    let any_loaded = if !primary_loaded {
       let cwd = std::env::current_dir()
         .map(|p| p.display().to_string())
         .unwrap_or_else(|_| "<unknown>".to_string());
@@ -99,6 +117,7 @@ impl ServerConfig {
       if config_path != ".env" {
         // User explicitly specified a file — warn that it's missing.
         log::warn!("Config file not found: '{config_path}' (cwd: {cwd})");
+        false
       } else {
         // Default path — silently try a few fallback locations before giving up.
         let fallbacks = ["server/.env", "server/.env.example", ".env.example"];
@@ -111,16 +130,66 @@ impl ServerConfig {
         }
         if !found {
           log::debug!(
-            "No .env found in '{cwd}' or 'server/' — \
-             copy server/.env.example to server/.env and run from the workspace root, \
-             or use --config <path>"
+            "No .env found in '{cwd}' or 'server/' — generating one now"
           );
         }
+        found
       }
-    }
+    } else {
+      true
+    };
 
     // ── Step 3: full clap parse (CLI flags win over everything) ──────────────
-    Self::parse()
+    let config = Self::parse();
+
+    // ── Step 4: generate the config file if nothing was found anywhere ────────
+    if !any_loaded {
+      config.generate_env_file(&config_path);
+    }
+
+    config
+  }
+
+  /// Write a `.env` file at `path` populated with the resolved config values.
+  /// Uses whatever ended up in `self` after parsing (defaults or CLI flags).
+  fn generate_env_file(&self, path: &str) {
+    let contents = format!(
+      "# ArenaLink server config — generated on first run\n\
+       # Edit this file or pass CLI flags / env vars to override.\n\
+       \n\
+       SERVER_ADDR={addr}\n\
+       SERVER_PORT={port}\n\
+       DB_PATH=arenalink.db\n\
+       \n\
+       # ── FMS connection ───────────────────────────────────────────────────────────\n\
+       FMS_TYPE=cheesy\n\
+       FMS_HOST=localhost\n\
+       FMS_PORT=8080\n\
+       \n\
+       # ── Nexus integration (optional) ─────────────────────────────────────────\n\
+       # NEXUS_EVENT_ID=2026auwarp\n\
+       \n\
+       # ── Discord (optional) ───────────────────────────────────────────────────\n\
+       # DISCORD_BOT_TOKEN=\n\
+       # DISCORD_PIT_ALERTS_CHANNEL_ID=\n\
+       # DISCORD_GUILD_ID=\n\
+       # DISCORD_ENABLED=true\n\
+       \n\
+       # ── Discord role IDs (numeric snowflake IDs, for @-mentions) ─────────────\n\
+       # DISCORD_ROLE_FTA=\n\
+       # DISCORD_ROLE_FTAA=\n\
+       # DISCORD_ROLE_CSA=\n\
+       # DISCORD_ROLE_INSPECTOR=\n\
+       # DISCORD_ROLE_REFEREE=\n\
+       # DISCORD_ROLE_LRI=\n",
+      addr = self.addr,
+      port = self.port,
+    );
+
+    match std::fs::write(path, &contents) {
+      Ok(()) => log::info!("Generated config file at '{path}'"),
+      Err(e) => log::warn!("Could not write config file '{path}': {e}"),
+    }
   }
 }
 
@@ -166,6 +235,9 @@ pub struct DiscordConfig {
   pub role_inspector: u64,
   pub role_referee: u64,
   pub role_lri: u64,
+
+  // Nexus integration — optional
+  pub nexus_event_id: Option<String>,
 }
 
 fn parse_u64_env(key: &str) -> u64 {
@@ -178,6 +250,8 @@ impl DiscordConfig {
     let enabled = !bot_token.is_empty()
       && std::env::var("DISCORD_ENABLED").map_or(true, |v| v == "true" || v == "1");
 
+    let nexus_event_id = std::env::var("NEXUS_EVENT_ID").ok().filter(|s| !s.is_empty());
+
     Self {
       enabled,
       bot_token,
@@ -189,7 +263,15 @@ impl DiscordConfig {
       role_inspector: parse_u64_env("DISCORD_ROLE_INSPECTOR"),
       role_referee: parse_u64_env("DISCORD_ROLE_REFEREE"),
       role_lri: parse_u64_env("DISCORD_ROLE_LRI"),
+      nexus_event_id,
     }
+  }
+
+  /// Build the Nexus pit map URL for a team, if an event ID is configured.
+  pub fn nexus_pit_map_url(&self, team_id: u32) -> Option<String> {
+    self.nexus_event_id.as_ref().map(|event_id| {
+      format!("https://frc.nexus/en/event/{event_id}/team/{team_id}/map")
+    })
   }
 
   /// Format a single recipient as a Discord role mention, or None if not configured.
