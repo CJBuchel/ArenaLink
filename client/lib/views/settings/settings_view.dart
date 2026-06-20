@@ -68,7 +68,7 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
             ),
             _Field(
               label: 'ArenaLink Server Port',
-              hint: '9090',
+              hint: '8080',
               controller: _portCtrl,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               keyboardType: TextInputType.number,

@@ -83,7 +83,7 @@ impl Server {
       log_provider,
     };
 
-    let app  = router(app_state);
+    let app  = router(app_state, self.config.web_dir.clone());
     let addr = SocketAddr::new(self.config.addr, self.config.port);
 
     let listener = tokio::net::TcpListener::bind(addr).await?;

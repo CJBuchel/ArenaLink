@@ -8,7 +8,7 @@ abstract class AppSettings with _$AppSettings {
   const factory AppSettings({
     // ArenaLink server (Rust backend) — the only connection the app needs.
     @Default('localhost') String serverHost,
-    @Default(9090) int serverPort,
+    @Default(8080) int serverPort,
   }) = _AppSettings;
 
   factory AppSettings.fromJson(Map<String, dynamic> json) =>

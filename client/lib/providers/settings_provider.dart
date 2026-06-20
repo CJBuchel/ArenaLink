@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:arena_link/helpers/local_storage.dart';
 import 'package:arena_link/models/settings.dart';
@@ -17,6 +18,13 @@ class AppSettingsNotifier extends _$AppSettingsNotifier {
       try {
         return AppSettings.fromJson(jsonDecode(raw) as Map<String, dynamic>);
       } catch (_) {}
+    }
+    if (kIsWeb) {
+      final host = Uri.base.host;
+      if (host.isNotEmpty) {
+        final port = Uri.base.hasPort ? Uri.base.port : 8080;
+        return AppSettings(serverHost: host, serverPort: port);
+      }
     }
     return const AppSettings();
   }

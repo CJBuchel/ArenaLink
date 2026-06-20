@@ -29,8 +29,12 @@ pub struct ServerConfig {
   pub addr: IpAddr,
 
   /// TCP port for the HTTP API server.
-  #[arg(short, long, default_value = "9090", env = "SERVER_PORT")]
+  #[arg(short, long, default_value = "8080", env = "SERVER_PORT")]
   pub port: u16,
+
+  /// Directory to serve the compiled Flutter web app from.
+  #[arg(long, default_value = "client/build/web", env = "WEB_DIR")]
+  pub web_dir: String,
 
   /// Path to the sled database directory (created automatically if absent).
   #[arg(long, default_value = "arenalink.db", env = "DB_PATH")]
@@ -159,6 +163,8 @@ impl ServerConfig {
        \n\
        SERVER_ADDR={addr}\n\
        SERVER_PORT={port}\n\
+       # Change SERVER_PORT here and the Flutter web client will auto-detect it.\n\
+       WEB_DIR=client/build/web\n\
        DB_PATH=arenalink.db\n\
        \n\
        # ── FMS connection ───────────────────────────────────────────────────────────\n\

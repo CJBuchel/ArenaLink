@@ -8,7 +8,7 @@ part of 'settings.dart';
 
 _AppSettings _$AppSettingsFromJson(Map<String, dynamic> json) => _AppSettings(
   serverHost: json['serverHost'] as String? ?? 'localhost',
-  serverPort: (json['serverPort'] as num?)?.toInt() ?? 9090,
+  serverPort: (json['serverPort'] as num?)?.toInt() ?? 8080,
 );
 
 Map<String, dynamic> _$AppSettingsToJson(_AppSettings instance) =>

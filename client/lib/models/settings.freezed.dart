@@ -210,7 +210,7 @@ return $default(_that.serverHost,_that.serverPort);case _:
 @JsonSerializable()
 
 class _AppSettings implements AppSettings {
-  const _AppSettings({this.serverHost = 'localhost', this.serverPort = 9090});
+  const _AppSettings({this.serverHost = 'localhost', this.serverPort = 8080});
   factory _AppSettings.fromJson(Map<String, dynamic> json) => _$AppSettingsFromJson(json);
 
 @override@JsonKey() final  String serverHost;

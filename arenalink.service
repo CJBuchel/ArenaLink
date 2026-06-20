@@ -1,0 +1,18 @@
+[Unit]
+Description=ArenaLink Server
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/ArenaLink
+ExecStart=/root/ArenaLink/target/release/arenalink
+Restart=always
+RestartSec=3
+StandardOutput=journal
+StandardError=journal
+StartLimitIntervalSec=0
+StartLimitBurst=0
+
+[Install]
+WantedBy=multi-user.target

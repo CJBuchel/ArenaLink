@@ -25,7 +25,10 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
-use tower_http::cors::{Any, CorsLayer};
+use tower_http::{
+  cors::{Any, CorsLayer},
+  services::{ServeDir, ServeFile},
+};
 
 use database::AlertRepository;
 
@@ -92,7 +95,7 @@ impl AlertResponse {
 
 // ─── Router ───────────────────────────────────────────────────────────────────
 
-pub fn router(state: AppState) -> Router {
+pub fn router(state: AppState, web_dir: String) -> Router {
   let cors = CorsLayer::new()
     .allow_origin(Any)
     .allow_methods([Method::GET, Method::POST, Method::OPTIONS])
@@ -111,6 +114,11 @@ pub fn router(state: AppState) -> Router {
     .route("/api/alerts",                   post(post_alert_handler))
     .route("/api/alerts/status",            get(status_ws_handler))
     .route("/api/alerts/history/{team_id}", get(alert_history_handler))
+    // Flutter web app — served as fallback for all unmatched routes
+    .fallback_service(
+      ServeDir::new(&web_dir)
+        .fallback(ServeFile::new(format!("{web_dir}/index.html")))
+    )
     .layer(cors)
     .with_state(state)
 }
